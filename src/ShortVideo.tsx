@@ -27,12 +27,15 @@ import {
   linearTiming,
 } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
-import { loadFont } from "@remotion/google-fonts/NotoSansJP";
 import { CaptionOverlay } from "./CaptionOverlay";
 import type { SubtitleItem, TelopStyle } from "./CaptionOverlay";
 
-// Noto Sans JP をロード（Remotion公式 fonts ルールに従う）
-const { fontFamily } = loadFont();
+// Noto Sans JP フォント名（レンダリング環境にフォントがインストール済みの場合はこのまま使用）
+// ネットワーク接続がある環境では loadFont() を呼ぶことでWebフォントを確実に読み込める:
+//   import { loadFont } from "@remotion/google-fonts/NotoSansJP";
+//   loadFont("normal", { subsets: ["[0]","[1]","[2]"], weights: ["400","700","900"] });
+import { fontFamily as notoFontFamily } from "@remotion/google-fonts/NotoSansJP";
+const fontFamily = `${notoFontFamily}, 'Hiragino Sans', 'Yu Gothic', sans-serif`;
 
 // ===== 型定義 =====
 

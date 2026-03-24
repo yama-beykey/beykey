@@ -1,4 +1,4 @@
-import { Composition } from "remotion";
+import { Composition, registerRoot } from "remotion";
 import { ShortVideo } from "./ShortVideo";
 
 // デフォルト尺: 80秒 × 30fps = 2400フレーム（episode.jsonで上書き可能）
@@ -16,3 +16,5 @@ export const RemotionRoot = () => {
     />
   );
 };
+
+registerRoot(RemotionRoot);

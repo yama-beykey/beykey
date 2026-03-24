@@ -38,27 +38,34 @@ python3 "$SKILL_DIR/scripts/generate-episode.py" "$DIR"
 
 # --- Phase 3: 素材をRemotionのpublicディレクトリに配置 ---
 echo ""
-echo "📂 Phase 3: 素材リンク..."
+echo "📂 Phase 3: 素材コピー..."
 rm -rf "$SKILL_DIR/public/project"
 mkdir -p "$SKILL_DIR/public/project"
 
-# 動画ファイル
+# 動画ファイル（ハードリンクを試みて失敗したらコピー）
 for f in demo-full.mp4 official-demo.mp4; do
-  [ -f "$DIR/$f" ] && ln -sf "$DIR/$f" "$SKILL_DIR/public/project/"
+  if [ -f "$DIR/$f" ]; then
+    ln "$DIR/$f" "$SKILL_DIR/public/project/$f" 2>/dev/null \
+      || cp "$DIR/$f" "$SKILL_DIR/public/project/$f"
+  fi
 done
 
 # スクリーンショット
 if [ -d "$DIR/screenshots" ]; then
-  ln -sf "$DIR/screenshots" "$SKILL_DIR/public/project/"
+  cp -r "$DIR/screenshots" "$SKILL_DIR/public/project/"
 fi
 
 # ナレーション
-[ -n "$NARRATION" ] && ln -sf "$NARRATION" "$SKILL_DIR/public/project/"
+if [ -n "$NARRATION" ]; then
+  NARRATION_BASENAME=$(basename "$NARRATION")
+  ln "$NARRATION" "$SKILL_DIR/public/project/$NARRATION_BASENAME" 2>/dev/null \
+    || cp "$NARRATION" "$SKILL_DIR/public/project/$NARRATION_BASENAME"
+fi
 
 # episode.json
-ln -sf "$DIR/episode.json" "$SKILL_DIR/public/project/"
+cp "$DIR/episode.json" "$SKILL_DIR/public/project/"
 
-echo "  リンク完了"
+echo "  コピー完了"
 
 # --- Phase 4: Remotionレンダリング ---
 echo ""
@@ -72,7 +79,23 @@ FPS=$(python3 -c "import json; print(json.load(open('$DIR/episode.json'))['meta'
 DURATION_SEC=$(python3 -c "import json; print(json.load(open('$DIR/episode.json'))['meta']['durationSec'])")
 DURATION=$(python3 -c "import json; d=json.load(open('$DIR/episode.json')); print(int(d['meta']['durationSec'] * d['meta']['fps']))")
 
-npx remotion render src/index.ts ShortVideo \
+# ブラウザ実行ファイルを自動検出 (Playwright headless_shell を優先)
+BROWSER_EXEC=""
+for candidate in \
+  "$HOME/.cache/ms-playwright/chromium_headless_shell-"*/chrome-linux/headless_shell \
+  /usr/bin/google-chrome \
+  /usr/bin/chromium; do
+  if [ -x "$candidate" ] 2>/dev/null; then
+    BROWSER_EXEC="$candidate"
+    break
+  fi
+done
+BROWSER_FLAG=""
+[ -n "$BROWSER_EXEC" ] && BROWSER_FLAG="--browser-executable $BROWSER_EXEC"
+
+# shellcheck disable=SC2086
+npx remotion render src/index.tsx ShortVideo \
+  $BROWSER_FLAG \
   --output "$DIR/final-video-noaudio.mp4" \
   --width "$WIDTH" \
   --height "$HEIGHT" \
