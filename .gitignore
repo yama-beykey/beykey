@@ -1,0 +1,6 @@
+node_modules/
+dist/
+public/project/
+*.mp4
+*.wav
+*.mp3

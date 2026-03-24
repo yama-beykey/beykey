@@ -1,0 +1,32 @@
+{
+  "name": "beykey",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:41721/git/yama-beykey/beykey"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@remotion/captions": "4.0.438",
+    "@remotion/cli": "^4.0.438",
+    "@remotion/media-utils": "^4.0.438",
+    "@remotion/renderer": "^4.0.438",
+    "@remotion/transitions": "4.0.438",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.438"
+  },
+  "devDependencies": {
+    "@remotion/google-fonts": "^4.0.438",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2"
+  }
+}
