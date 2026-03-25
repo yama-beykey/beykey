@@ -50,41 +50,40 @@ def write_script(url, tool_name, output_path):
 
     prompt = f"""あなたはクリエイター向けAIツール紹介のショート動画の台本ライターです。
 
-以下のAIツールの縦動画（60〜80秒）の台本を作成してください。
+以下のAIツールの縦動画（約38秒）の台本を作成してください。
 
 ツール名: {tool_name}
 URL: {url}
 サイト内容（抜粋）:
 {page_text}
 
-## 台本の構成（合計60〜80秒）
-1. フック（0-5秒）: 結果・インパクトから入る。「〜で悩んでいませんか？」「〜が一瞬でできる」
-2. 問題提起（5-15秒）: ターゲットの課題を具体的に
-3. ツール紹介（15-30秒）: ツール名と何ができるか
-4. デモ説明（30-60秒）: 実際の使い方を順番に
-5. 結果・料金（60-70秒）: 料金・無料プランの有無
-6. CTA（70-80秒）: フォロー・コメントを促す
+## 台本の構成（ナレーション合計 約38秒 ＝ 日本語 約260〜280文字）
+1. フック（0-4秒 / 約28文字）: 結果・インパクトから入る。「〜が一瞬でできる」
+2. 問題提起（4-10秒 / 約42文字）: ターゲットの課題を1〜2文で具体的に
+3. ツール紹介（10-20秒 / 約70文字）: ツール名と何ができるか
+4. デモ説明（20-34秒 / 約98文字）: 実際の使い方を2〜3ステップで
+5. 結果・料金（34-38秒 / 約28文字）: 料金・無料プランの有無を一言で
 
 ## 制約
 - 日本語のみ
-- 1文は30文字以内（テロップに収まるよう）
+- 1文は25文字以内（テロップに収まるよう）
 - 体言止め・短文を多用
 - 敬体（です・ます）
-- 各パートをJSON配列で返す
+- fullNarration の合計文字数は 260〜280文字に収める
+- CTAは含めない（エンドカードで別途表示するため）
 
 ## 出力形式（JSON）
 {{
   "title": "動画タイトル（20文字以内）",
   "hook": "フックのセリフ",
   "parts": [
-    {{"id": "hook", "startSec": 0, "endSec": 5, "text": "セリフ"}},
-    {{"id": "problem", "startSec": 5, "endSec": 15, "text": "セリフ"}},
-    {{"id": "intro", "startSec": 15, "endSec": 30, "text": "セリフ"}},
-    {{"id": "demo", "startSec": 30, "endSec": 60, "text": "セリフ"}},
-    {{"id": "result", "startSec": 60, "endSec": 70, "text": "セリフ"}},
-    {{"id": "cta", "startSec": 70, "endSec": 80, "text": "セリフ"}}
+    {{"id": "hook",    "startSec": 0,  "endSec": 4,  "text": "セリフ"}},
+    {{"id": "problem", "startSec": 4,  "endSec": 10, "text": "セリフ"}},
+    {{"id": "intro",   "startSec": 10, "endSec": 20, "text": "セリフ"}},
+    {{"id": "demo",    "startSec": 20, "endSec": 34, "text": "セリフ"}},
+    {{"id": "result",  "startSec": 34, "endSec": 38, "text": "セリフ"}}
   ],
-  "fullNarration": "全パートを繋げた完全ナレーション文"
+  "fullNarration": "全パートを繋げた完全ナレーション文（260〜280文字）"
 }}
 
 JSONのみ返してください。"""
@@ -117,7 +116,9 @@ JSONのみ返してください。"""
     print(f"✅ 台本生成完了: {script.get('title', '')}")
     print(f"   パート: {len(script.get('parts', []))}個")
     char_count = len(script.get("fullNarration", ""))
-    print(f"   文字数: {char_count}文字（約{char_count // 5}秒）")
+    # 日本語TTS speed=1.1 の実測: 約7文字/秒
+    estimated_sec = round(char_count / 7)
+    print(f"   文字数: {char_count}文字（約{estimated_sec}秒 + CTA3秒 = 約{estimated_sec + 3}秒）")
 
     return script
 
