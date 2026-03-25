@@ -8,6 +8,52 @@ import sys
 import os
 
 
+def _add_english_translations(subtitles, api_key):
+    """GPT-4o-miniで日本語テロップを一括英訳し textEn を追加する"""
+    import requests
+
+    if not subtitles or not api_key:
+        return subtitles
+
+    texts = [s["text"] for s in subtitles]
+    prompt = (
+        "以下の日本語テキストを自然な英語に翻訳してください。\n"
+        "短いフレーズはそのまま短く、各テキストを順番に翻訳し、"
+        "JSONオブジェクト {\"translations\": [...]} の形式で返してください。\n\n"
+        f"日本語テキスト:\n{json.dumps(texts, ensure_ascii=False)}"
+    )
+
+    try:
+        resp = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"},
+                "temperature": 0.3,
+            },
+            timeout=60,
+        )
+        if resp.status_code != 200:
+            print(f"⚠️ 英訳APIエラー: {resp.status_code} — テロップは日本語のみで続行")
+            return subtitles
+
+        data = json.loads(resp.json()["choices"][0]["message"]["content"])
+        translations = data.get("translations", [])
+        for i, sub in enumerate(subtitles):
+            if i < len(translations):
+                sub["textEn"] = translations[i]
+        print(f"   英訳追加: {len(translations)}件")
+    except Exception as e:
+        print(f"⚠️ 英訳スキップ ({e})")
+
+    return subtitles
+
+
 def transcribe(audio_path, output_path):
     import requests
 
@@ -91,6 +137,9 @@ def transcribe(audio_path, output_path):
                 "text": "".join(group).strip(),
             }
         )
+
+    # 英訳を追加
+    subtitles = _add_english_translations(subtitles, api_key)
 
     output = {
         "fullText": result.get("text", ""),
