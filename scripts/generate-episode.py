@@ -10,7 +10,7 @@ import subprocess
 
 
 def fetch_irasutoya_image(keyword, save_path):
-    """いらすとやからキーワードに合う画像をダウンロード"""
+    """いらすとやからキーワードに合う透過PNG画像をダウンロード"""
     import urllib.parse
     import urllib.request
     import re as _re
@@ -22,10 +22,20 @@ def fetch_irasutoya_image(keyword, save_path):
             data = json.loads(resp.read())
         entries = data.get("feed", {}).get("entry", [])
         for entry in entries:
-            thumbnail = entry.get("media$thumbnail", {})
-            img_url = thumbnail.get("url", "")
+            # ブログ本文HTMLから実際の透過PNG URLを抽出（白背景サムネイルではなく）
+            content_html = entry.get("content", {}).get("$t", "")
+            png_matches = _re.findall(
+                r'(https://blogger\.googleusercontent\.com/[^"\'>\s]+\.png)',
+                content_html,
+            )
+            img_url = png_matches[0] if png_matches else ""
+            # フォールバック: サムネイルJPEGを透過PNG相当サイズで取得
+            if not img_url:
+                thumbnail = entry.get("media$thumbnail", {})
+                img_url = thumbnail.get("url", "")
+                if img_url:
+                    img_url = _re.sub(r"/s\d+-c/", "/s400/", img_url)
             if img_url:
-                img_url = _re.sub(r"/s\d+-c/", "/s300/", img_url)
                 req2 = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
                 with urllib.request.urlopen(req2, timeout=8) as img_resp:
                     with open(save_path, "wb") as f:

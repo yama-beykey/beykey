@@ -151,16 +151,18 @@ const SingleCaption: React.FC<{
         </div>
       )}
 
-      {/* いらすとやイラスト */}
+      {/* いらすとやイラスト（透過PNG切り抜き） */}
       {item.irasutoyaImage && (
         <Img
           src={staticFile(`project/${item.irasutoyaImage}`)}
           style={{
-            width: 200,
-            height: 200,
+            width: 220,
+            height: 220,
             objectFit: "contain",
-            marginBottom: 16,
-            filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5))",
+            marginBottom: 12,
+            filter:
+              "drop-shadow(0 6px 16px rgba(0,0,0,0.6))" +
+              " drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
           }}
         />
       )}
