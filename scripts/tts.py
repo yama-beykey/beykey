@@ -27,11 +27,11 @@ def get_api_key():
     return api_key
 
 
-def generate_tts(text, output_path, voice="nova", speed=1.1):
+def generate_tts(text, output_path, voice="nova", speed=1.5):
     """
     テキストをOpenAI TTSで音声に変換
     voice: alloy / echo / fable / onyx / nova / shimmer
-    speed: 0.25〜4.0 (日本語は1.1がちょうど良い)
+    speed: 0.25〜4.0 (日本語 speed=1.5 で約9.5文字/秒)
     """
     api_key = get_api_key()
     if not api_key:
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     voice = sys.argv[3] if len(sys.argv) > 3 else "nova"
-    speed = float(sys.argv[4]) if len(sys.argv) > 4 else 1.1
+    speed = float(sys.argv[4]) if len(sys.argv) > 4 else 1.5
 
     # JSONファイルかテキストかを判定
     if input_path.endswith(".json"):
