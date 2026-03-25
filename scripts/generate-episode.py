@@ -59,8 +59,10 @@ def generate_episode(project_dir):
 
     # 全体の尺（ナレーション基準、なければデモ動画基準、最大90秒）
     total_duration = min(narration_duration or demo_duration, 90)
-    # 最低80秒を保証（ショット定義が70秒まであるため）
-    total_duration = max(total_duration, 80)
+    # ナレーション後に3秒CTAを追加
+    CTA_SEC = 3.0
+    content_sec = total_duration      # ナレーションが流れる時間
+    total_duration = content_sec + CTA_SEC
 
     # スクリーンショットを収集
     ss_dir = os.path.join(project_dir, "screenshots")
@@ -78,110 +80,128 @@ def generate_episode(project_dir):
     has_demo = os.path.exists(demo_path) and demo_duration > 0
 
     # ショット（映像クリップ）を構成
-    # 台本のパートに対応させる
+    # 全てのタイミングを content_sec に比例スケールする
+    # テンプレート比率 (80秒ベース): hook=5s, problem=10s, intro=15s, demo=30s, result=10s
+    def t(ratio):
+        """0〜1の比率を content_sec の秒数に変換"""
+        return round(ratio * content_sec, 2)
+
     shots = []
 
-    # フック (0:00-0:05): デモの最も印象的な部分 or 最初のスクショ
+    # フック (冒頭〜6%): 最後のスクショ or デモのクライマックス
     if screenshots:
         shots.append({
-            "id": "hook", "startSec": 0, "endSec": 5,
+            "id": "hook", "startSec": t(0.0), "endSec": t(0.0625),
             "type": "image", "src": f"screenshots/{screenshots[-1]}",
             "label": "フック — 結果を先に見せる",
         })
     elif has_demo:
         shots.append({
-            "id": "hook", "startSec": 0, "endSec": 5,
+            "id": "hook", "startSec": t(0.0), "endSec": t(0.0625),
             "type": "video", "src": "demo-full.mp4",
             "videoStartSec": demo_duration * 0.7,
             "label": "フック — 結果を先に見せる",
         })
     else:
         shots.append({
-            "id": "hook", "startSec": 0, "endSec": 5,
+            "id": "hook", "startSec": t(0.0), "endSec": t(0.0625),
             "type": "color", "backgroundColor": "#0f0f1a",
             "label": "フック — 結果を先に見せる",
         })
 
-    # 問題提起 (0:05-0:15): スクショ or ナレーションのみ
-    shots.append(
-        {
-            "id": "problem",
-            "startSec": 5,
-            "endSec": 15,
-            "type": "image" if len(screenshots) >= 2 else "color",
-            "src": f"screenshots/{screenshots[0]}" if len(screenshots) >= 2 else None,
-            "backgroundColor": "#1a1a2e"
-            if not (len(screenshots) >= 2)
-            else None,
-            "label": "問題提起",
-        }
-    )
+    # 問題提起 (6〜19%)
+    shots.append({
+        "id": "problem",
+        "startSec": t(0.0625),
+        "endSec": t(0.1875),
+        "type": "image" if len(screenshots) >= 2 else "color",
+        "src": f"screenshots/{screenshots[0]}" if len(screenshots) >= 2 else None,
+        "backgroundColor": "#1a1a2e" if not (len(screenshots) >= 2) else None,
+        "label": "問題提起",
+    })
 
-    # ツール紹介 (0:15-0:30): デモ冒頭 (トップページ)
+    # ツール紹介 (19〜38%): デモ冒頭 or スクショ
     if has_demo:
         shots.append({
-            "id": "intro", "startSec": 15, "endSec": 30,
+            "id": "intro", "startSec": t(0.1875), "endSec": t(0.375),
             "type": "video", "src": "demo-full.mp4",
-            "videoStartSec": 0, "videoEndSec": 15,
+            "videoStartSec": 0, "videoEndSec": content_sec * 0.1875,
+            "label": "ツール紹介 — トップページ",
+        })
+    elif len(screenshots) >= 1:
+        shots.append({
+            "id": "intro", "startSec": t(0.1875), "endSec": t(0.375),
+            "type": "image", "src": f"screenshots/{screenshots[0]}",
             "label": "ツール紹介 — トップページ",
         })
     else:
         shots.append({
-            "id": "intro", "startSec": 15, "endSec": 30,
+            "id": "intro", "startSec": t(0.1875), "endSec": t(0.375),
             "type": "color", "backgroundColor": "#1a1a2e",
             "label": "ツール紹介 — トップページ",
         })
 
-    # デモ (0:30-1:00): デモ映像のメイン部分
+    # デモ (38〜75%): デモ映像 or スクショをローテーション
     if has_demo:
         shots.append({
-            "id": "demo", "startSec": 30, "endSec": 60,
+            "id": "demo", "startSec": t(0.375), "endSec": t(0.75),
             "type": "video", "src": "demo-full.mp4",
-            "videoStartSec": 30, "videoEndSec": min(demo_duration, 120),
+            "videoStartSec": content_sec * 0.375,
+            "videoEndSec": min(demo_duration, content_sec * 0.75),
+            "label": "デモ — こんな使い方ができる",
+        })
+    elif len(screenshots) >= 2:
+        shots.append({
+            "id": "demo", "startSec": t(0.375), "endSec": t(0.75),
+            "type": "image", "src": f"screenshots/{screenshots[1]}",
             "label": "デモ — こんな使い方ができる",
         })
     else:
         shots.append({
-            "id": "demo", "startSec": 30, "endSec": 60,
+            "id": "demo", "startSec": t(0.375), "endSec": t(0.75),
             "type": "color", "backgroundColor": "#1a1a2e",
             "label": "デモ — こんな使い方ができる",
         })
 
-    # 結果 + ハードル下げ (1:00-1:10): 料金ページスクショ
+    # 結果 + 料金 (75〜88%): 料金ページスクショ or デモ末尾
     pricing_ss = next(
         (s for s in screenshots if "pricing" in s.lower()), None
     )
     if pricing_ss:
         shots.append({
-            "id": "result", "startSec": 60, "endSec": 70,
+            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
             "type": "image", "src": f"screenshots/{pricing_ss}",
             "label": "結果 + 料金",
         })
     elif has_demo:
         shots.append({
-            "id": "result", "startSec": 60, "endSec": 70,
+            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
             "type": "video", "src": "demo-full.mp4",
             "videoStartSec": max(demo_duration - 20, 0),
             "label": "結果 + 料金",
         })
+    elif len(screenshots) >= 3:
+        shots.append({
+            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
+            "type": "image", "src": f"screenshots/{screenshots[2]}",
+            "label": "結果 + 料金",
+        })
     else:
         shots.append({
-            "id": "result", "startSec": 60, "endSec": 70,
+            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
             "type": "color", "backgroundColor": "#1a1a2e",
             "label": "結果 + 料金",
         })
 
-    # CTA (1:10-1:20): エンドカード
-    shots.append(
-        {
-            "id": "cta",
-            "startSec": 70,
-            "endSec": min(total_duration, 80),
-            "type": "color",
-            "backgroundColor": "#1a1a2e",
-            "label": "CTA — フォローしてね",
-        }
-    )
+    # CTA (88%〜): ナレーション終了後の固定3秒エンドカード
+    shots.append({
+        "id": "cta",
+        "startSec": t(0.875),
+        "endSec": total_duration,
+        "type": "color",
+        "backgroundColor": "#1a1a2e",
+        "label": "CTA — フォローしてね",
+    })
 
     # episode.json組み立て
     episode = {
