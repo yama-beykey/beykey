@@ -72,22 +72,33 @@ def generate_episode(project_dir):
             ]
         )
 
+    # demo-full.mp4 の存在確認
+    has_demo = os.path.exists(demo_path) and demo_duration > 0
+
     # ショット（映像クリップ）を構成
     # 台本のパートに対応させる
     shots = []
 
     # フック (0:00-0:05): デモの最も印象的な部分 or 最初のスクショ
-    shots.append(
-        {
-            "id": "hook",
-            "startSec": 0,
-            "endSec": 5,
-            "type": "image" if screenshots else "video",
-            "src": f"screenshots/{screenshots[-1]}" if screenshots else "demo-full.mp4",
-            "videoStartSec": demo_duration * 0.7 if not screenshots else None,
+    if screenshots:
+        shots.append({
+            "id": "hook", "startSec": 0, "endSec": 5,
+            "type": "image", "src": f"screenshots/{screenshots[-1]}",
             "label": "フック — 結果を先に見せる",
-        }
-    )
+        })
+    elif has_demo:
+        shots.append({
+            "id": "hook", "startSec": 0, "endSec": 5,
+            "type": "video", "src": "demo-full.mp4",
+            "videoStartSec": demo_duration * 0.7,
+            "label": "フック — 結果を先に見せる",
+        })
+    else:
+        shots.append({
+            "id": "hook", "startSec": 0, "endSec": 5,
+            "type": "color", "backgroundColor": "#0f0f1a",
+            "label": "フック — 結果を先に見せる",
+        })
 
     # 問題提起 (0:05-0:15): スクショ or ナレーションのみ
     shots.append(
@@ -105,50 +116,58 @@ def generate_episode(project_dir):
     )
 
     # ツール紹介 (0:15-0:30): デモ冒頭 (トップページ)
-    shots.append(
-        {
-            "id": "intro",
-            "startSec": 15,
-            "endSec": 30,
-            "type": "video",
-            "src": "demo-full.mp4",
-            "videoStartSec": 0,
-            "videoEndSec": 15,
+    if has_demo:
+        shots.append({
+            "id": "intro", "startSec": 15, "endSec": 30,
+            "type": "video", "src": "demo-full.mp4",
+            "videoStartSec": 0, "videoEndSec": 15,
             "label": "ツール紹介 — トップページ",
-        }
-    )
+        })
+    else:
+        shots.append({
+            "id": "intro", "startSec": 15, "endSec": 30,
+            "type": "color", "backgroundColor": "#1a1a2e",
+            "label": "ツール紹介 — トップページ",
+        })
 
     # デモ (0:30-1:00): デモ映像のメイン部分
-    shots.append(
-        {
-            "id": "demo",
-            "startSec": 30,
-            "endSec": 60,
-            "type": "video",
-            "src": "demo-full.mp4",
-            "videoStartSec": 30,
-            "videoEndSec": min(demo_duration, 120),
+    if has_demo:
+        shots.append({
+            "id": "demo", "startSec": 30, "endSec": 60,
+            "type": "video", "src": "demo-full.mp4",
+            "videoStartSec": 30, "videoEndSec": min(demo_duration, 120),
             "label": "デモ — こんな使い方ができる",
-        }
-    )
+        })
+    else:
+        shots.append({
+            "id": "demo", "startSec": 30, "endSec": 60,
+            "type": "color", "backgroundColor": "#1a1a2e",
+            "label": "デモ — こんな使い方ができる",
+        })
 
     # 結果 + ハードル下げ (1:00-1:10): 料金ページスクショ
     pricing_ss = next(
         (s for s in screenshots if "pricing" in s.lower()), None
     )
-    shots.append(
-        {
-            "id": "result",
-            "startSec": 60,
-            "endSec": 70,
-            "type": "image" if pricing_ss else "video",
-            "src": f"screenshots/{pricing_ss}"
-            if pricing_ss
-            else "demo-full.mp4",
-            "videoStartSec": demo_duration - 20 if not pricing_ss else None,
+    if pricing_ss:
+        shots.append({
+            "id": "result", "startSec": 60, "endSec": 70,
+            "type": "image", "src": f"screenshots/{pricing_ss}",
             "label": "結果 + 料金",
-        }
-    )
+        })
+    elif has_demo:
+        shots.append({
+            "id": "result", "startSec": 60, "endSec": 70,
+            "type": "video", "src": "demo-full.mp4",
+            "videoStartSec": max(demo_duration - 20, 0),
+            "label": "結果 + 料金",
+        })
+    else:
+        shots.append({
+            "id": "result", "startSec": 60, "endSec": 70,
+            "type": "color", "backgroundColor": "#1a1a2e",
+            "label": "結果 + 料金",
+        })
 
     # CTA (1:10-1:20): エンドカード
     shots.append(
