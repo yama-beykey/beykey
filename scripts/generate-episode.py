@@ -59,6 +59,8 @@ def generate_episode(project_dir):
 
     # 全体の尺（ナレーション基準、なければデモ動画基準、最大90秒）
     total_duration = min(narration_duration or demo_duration, 90)
+    # 最低80秒を保証（ショット定義が70秒まであるため）
+    total_duration = max(total_duration, 80)
 
     # スクリーンショットを収集
     ss_dir = os.path.join(project_dir, "screenshots")

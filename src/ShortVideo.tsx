@@ -242,7 +242,8 @@ export const ShortVideo: React.FC = () => {
   const shotDurations = shots.map((shot) => {
     const rawFrames = Math.round((shot.endSec - shot.startSec) * fps);
     // 最小1フレーム保証
-    return Math.max(rawFrames, 1);
+    // トランジション長より短いショットはエラーになるため、最低 transitionDurationFrames+1 フレーム保証
+    return Math.max(rawFrames, transitionDurationFrames + 1);
   });
 
   // テロップスタイルにロードしたフォントを適用
