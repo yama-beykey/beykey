@@ -107,7 +107,47 @@ JSONのみ返してください。"""
         print(f"❌ OpenAI API error: {resp.status_code} {resp.text}")
         sys.exit(1)
 
-    content = resp.json()["choices"][0]["message"]["content"]
+    resp_json = resp.json()
+    message = resp_json["choices"][0]["message"]
+    content = message.get("content")
+
+    if content is None:
+        # refusal or unexpected structure — retry without json_object format
+        print("⚠️  json_object形式でcontentがNull。通常モードで再試行...")
+        resp2 = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+            },
+            timeout=60,
+        )
+        if resp2.status_code != 200:
+            print(f"❌ OpenAI API error (retry): {resp2.status_code} {resp2.text}")
+            sys.exit(1)
+        content = resp2.json()["choices"][0]["message"]["content"]
+
+    if not content:
+        print(f"❌ APIレスポンスにcontentがありません: {resp_json}")
+        sys.exit(1)
+
+    # JSON部分を抽出（```json ... ``` マークダウンに包まれる場合も対応）
+    import re
+    json_match = re.search(r"```json\s*([\s\S]*?)```", content)
+    if json_match:
+        content = json_match.group(1)
+    else:
+        # 最初の { から最後の } までを抽出
+        start = content.find("{")
+        end = content.rfind("}") + 1
+        if start >= 0 and end > start:
+            content = content[start:end]
+
     script = json.loads(content)
 
     with open(output_path, "w", encoding="utf-8") as f:
