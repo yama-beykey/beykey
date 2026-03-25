@@ -57,19 +57,27 @@ URL: {url}
 サイト内容（抜粋）:
 {page_text}
 
-## 台本の構成（ナレーション合計 約38秒 ＝ 日本語 約280〜300文字）
-1. フック（0-4秒 / 約30文字）: 結果・インパクトから入る。「〜が一瞬でできる」
-2. 問題提起（4-10秒 / 約47文字）: ターゲットの課題を1〜2文で具体的に
-3. ツール紹介（10-20秒 / 約79文字）: ツール名と何ができるか
-4. デモ説明（20-34秒 / 約111文字）: 実際の使い方を2〜3ステップで
-5. 結果・料金（34-38秒 / 約30文字）: 料金・無料プランの有無を一言で
+## ★最重要: 文字数ルール★
+fullNarration は必ず **280文字以上300文字以下** で書いてください。
+少なすぎると動画が短くなりNG。文字数が足りない場合は各パートを膨らませてください。
 
-## 制約
+## 台本の構成（5パート合計 280〜300文字）
+各パートの目安文字数（合計で必ず280〜300文字にすること）:
+
+1. hook（約30文字）: 「〜が一瞬でできる！」など結果・インパクトから入る
+   例: 「デザインもコーディングも、もう別々に考えなくていい時代が来ました。」
+2. problem（約50文字）: ターゲットの課題を2〜3文で具体的に描写
+   例: 「UIデザインからコードへの変換、毎回手動でやっていませんか？デザイナーとエンジニアの連携に時間がかかり、修正のたびにコストが膨らむ。」
+3. intro（約80文字）: ツール名と何ができるか、主な機能を3〜4文で
+   例: 「{tool_name}は、AIがUIデザインをリアルタイムでコードに変換するツールです。テキストで指示するだけで、Reactコンポーネントが自動生成。デザインシステムとも連携できます。」
+4. demo（約110文字）: 実際の操作を3〜4ステップで丁寧に説明
+   例: 「使い方はシンプル。まずプロンプトで作りたいUIを入力します。すると数秒でコードが生成され、プレビューで確認できます。気に入らない部分はチャットで修正指示を出すだけ。コードはそのままコピーして使えます。」
+5. result（約30文字）: 料金・無料プランの有無・特徴を一言
+   例: 「無料プランあり。有料は月額20ドルから。」
+
+## その他の制約
 - 日本語のみ
-- 1文は25文字以内（テロップに収まるよう）
-- 体言止め・短文を多用
 - 敬体（です・ます）
-- fullNarration の合計文字数は 280〜300文字に収める
 - CTAは含めない（エンドカードで別途表示するため）
 
 ## 出力形式（JSON）
@@ -77,13 +85,13 @@ URL: {url}
   "title": "動画タイトル（20文字以内）",
   "hook": "フックのセリフ",
   "parts": [
-    {{"id": "hook",    "startSec": 0,  "endSec": 4,  "text": "セリフ"}},
-    {{"id": "problem", "startSec": 4,  "endSec": 10, "text": "セリフ"}},
-    {{"id": "intro",   "startSec": 10, "endSec": 20, "text": "セリフ"}},
-    {{"id": "demo",    "startSec": 20, "endSec": 34, "text": "セリフ"}},
-    {{"id": "result",  "startSec": 34, "endSec": 38, "text": "セリフ"}}
+    {{"id": "hook",    "startSec": 0,  "endSec": 4,  "text": "セリフ（約30文字）"}},
+    {{"id": "problem", "startSec": 4,  "endSec": 11, "text": "セリフ（約50文字）"}},
+    {{"id": "intro",   "startSec": 11, "endSec": 20, "text": "セリフ（約80文字）"}},
+    {{"id": "demo",    "startSec": 20, "endSec": 34, "text": "セリフ（約110文字）"}},
+    {{"id": "result",  "startSec": 34, "endSec": 38, "text": "セリフ（約30文字）"}}
   ],
-  "fullNarration": "全パートを繋げた完全ナレーション文（280〜300文字）"
+  "fullNarration": "全5パートを繋げた完全ナレーション文。必ず280〜300文字。"
 }}
 
 JSONのみ返してください。"""
@@ -150,12 +158,48 @@ JSONのみ返してください。"""
 
     script = json.loads(content)
 
+    # 文字数が短すぎる場合は一度だけ再試行
+    char_count = len(script.get("fullNarration", ""))
+    if char_count < 200:
+        print(f"⚠️  fullNarration が{char_count}文字と短すぎます。再試行...")
+        retry_prompt = prompt + f"\n\n※前回の生成は{char_count}文字しかありませんでした。今度は必ず280文字以上300文字以下で書いてください。"
+        resp3 = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": retry_prompt}],
+                "response_format": {"type": "json_object"},
+                "temperature": 0.8,
+            },
+            timeout=60,
+        )
+        if resp3.status_code == 200:
+            retry_content = resp3.json()["choices"][0]["message"].get("content")
+            if retry_content:
+                json_match2 = re.search(r"```json\s*([\s\S]*?)```", retry_content)
+                if json_match2:
+                    retry_content = json_match2.group(1)
+                else:
+                    s2 = retry_content.find("{")
+                    e2 = retry_content.rfind("}") + 1
+                    if s2 >= 0 and e2 > s2:
+                        retry_content = retry_content[s2:e2]
+                retry_script = json.loads(retry_content)
+                retry_chars = len(retry_script.get("fullNarration", ""))
+                if retry_chars > char_count:
+                    script = retry_script
+                    char_count = retry_chars
+                    print(f"   再試行で{char_count}文字に改善")
+
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(script, f, ensure_ascii=False, indent=2)
 
     print(f"✅ 台本生成完了: {script.get('title', '')}")
     print(f"   パート: {len(script.get('parts', []))}個")
-    char_count = len(script.get("fullNarration", ""))
     # 日本語TTS speed=1.5 の実測: 約9.5文字/秒
     estimated_sec = round(char_count / 9.5)
     print(f"   文字数: {char_count}文字（約{estimated_sec}秒 + CTA3秒 = 約{estimated_sec + 3}秒）")
