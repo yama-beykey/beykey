@@ -4,3 +4,6 @@ public/project/
 *.mp4
 *.wav
 *.mp3
+
+# 生成動画出力
+output/
