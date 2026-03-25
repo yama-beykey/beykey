@@ -43,6 +43,10 @@ cat > "$OUTPUT_DIR/metadata.json" << EOF
 }
 EOF
 
+# --- Python依存パッケージ確認 ---
+python3 -c "import requests" 2>/dev/null || pip install requests -q
+python3 -c "import openai" 2>/dev/null || pip install openai -q
+
 # --- Phase 1: 台本生成 ---
 echo "📝 Phase 1: 台本生成 (GPT-4o)..."
 python3 "$SKILL_DIR/scripts/write-script.py" "$URL" "$TOOL_NAME" "$OUTPUT_DIR/script.json"
