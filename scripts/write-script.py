@@ -99,7 +99,7 @@ JSONのみ返してください。"""
 
     def call_llm(p, temperature=0.7):
         """Claude API を優先、失敗時は OpenAI にフォールバック"""
-        # 1. Anthropic Claude を試みる（ANTHROPIC_API_KEY or Claude Code 内部認証）
+        # 1. Anthropic Claude SDK を試みる（ANTHROPIC_API_KEY or 内部認証）
         try:
             import anthropic as _anthropic
             client = _anthropic.Anthropic()
@@ -110,7 +110,24 @@ JSONのみ返してください。"""
             )
             return msg.content[0].text
         except Exception as e:
-            print(f"   Claude API 失敗: {e}。OpenAI にフォールバック...")
+            print(f"   Claude SDK 失敗: {e}。claude CLI を試みます...")
+
+        # 2. claude CLI (Claude Code) を試みる
+        try:
+            import subprocess as _sp
+            import tempfile as _tmp
+            with _tmp.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as tf:
+                tf.write(p)
+                tf_path = tf.name
+            result = _sp.run(
+                ["claude", "--print", "--output-format", "text", p[:4000]],
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+            print(f"   claude CLI 失敗: {result.stderr[:200]}。OpenAI にフォールバック...")
+        except Exception as e:
+            print(f"   claude CLI 失敗: {e}。OpenAI にフォールバック...")
 
         # OpenAI フォールバック
         oai_key = get_openai_key()
