@@ -55,6 +55,11 @@ if [ -d "$DIR/screenshots" ]; then
   cp -r "$DIR/screenshots" "$SKILL_DIR/public/project/"
 fi
 
+# いらすとや画像
+if [ -d "$DIR/irasutoya" ]; then
+  cp -r "$DIR/irasutoya" "$SKILL_DIR/public/project/"
+fi
+
 # ナレーション
 if [ -n "$NARRATION" ]; then
   NARRATION_BASENAME=$(basename "$NARRATION")

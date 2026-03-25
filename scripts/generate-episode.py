@@ -9,6 +9,33 @@ import os
 import subprocess
 
 
+def fetch_irasutoya_image(keyword, save_path):
+    """いらすとやからキーワードに合う画像をダウンロード"""
+    import urllib.parse
+    import urllib.request
+    import re as _re
+    try:
+        encoded = urllib.parse.quote(keyword)
+        feed_url = f"https://www.irasutoya.com/feeds/posts/default?q={encoded}&alt=json&max-results=3"
+        req = urllib.request.Request(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        entries = data.get("feed", {}).get("entry", [])
+        for entry in entries:
+            thumbnail = entry.get("media$thumbnail", {})
+            img_url = thumbnail.get("url", "")
+            if img_url:
+                img_url = _re.sub(r"/s\d+-c/", "/s300/", img_url)
+                req2 = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req2, timeout=8) as img_resp:
+                    with open(save_path, "wb") as f:
+                        f.write(img_resp.read())
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def get_duration(filepath):
     """ffprobeで動画/音声の尺を取得"""
     try:
@@ -43,6 +70,28 @@ def generate_episode(project_dir):
     if os.path.exists(transcript_path):
         with open(transcript_path) as f:
             transcript = json.load(f)
+
+    # いらすとや画像をダウンロード
+    irasutoya_dir = os.path.join(project_dir, "irasutoya")
+    subtitles = transcript.get("subtitles", [])
+    has_irasutoya = False
+    for i, sub in enumerate(subtitles):
+        keyword = sub.get("irasutoyaKeyword", "")
+        if not keyword:
+            continue
+        os.makedirs(irasutoya_dir, exist_ok=True)
+        img_filename = f"{i:02d}-{keyword[:20].replace('/', '_')}.png"
+        img_path = os.path.join(irasutoya_dir, img_filename)
+        if not os.path.exists(img_path):
+            ok = fetch_irasutoya_image(keyword, img_path)
+            if ok:
+                sub["irasutoyaImage"] = f"irasutoya/{img_filename}"
+                has_irasutoya = True
+        elif os.path.exists(img_path):
+            sub["irasutoyaImage"] = f"irasutoya/{img_filename}"
+            has_irasutoya = True
+    if has_irasutoya:
+        print(f"   いらすとや: {sum(1 for s in subtitles if s.get('irasutoyaImage'))}枚取得")
 
     # 動画ファイルの尺を取得
     demo_path = os.path.join(project_dir, "demo-full.mp4")
@@ -169,34 +218,34 @@ def generate_episode(project_dir):
     )
     if pricing_ss:
         shots.append({
-            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
+            "id": "result", "startSec": t(0.75), "endSec": round(content_sec, 2),
             "type": "image", "src": f"screenshots/{pricing_ss}",
             "label": "結果 + 料金",
         })
     elif has_demo:
         shots.append({
-            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
+            "id": "result", "startSec": t(0.75), "endSec": round(content_sec, 2),
             "type": "video", "src": "demo-full.mp4",
             "videoStartSec": max(demo_duration - 20, 0),
             "label": "結果 + 料金",
         })
     elif len(screenshots) >= 3:
         shots.append({
-            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
+            "id": "result", "startSec": t(0.75), "endSec": round(content_sec, 2),
             "type": "image", "src": f"screenshots/{screenshots[2]}",
             "label": "結果 + 料金",
         })
     else:
         shots.append({
-            "id": "result", "startSec": t(0.75), "endSec": t(0.875),
+            "id": "result", "startSec": t(0.75), "endSec": round(content_sec, 2),
             "type": "color", "backgroundColor": "#1a1a2e",
             "label": "結果 + 料金",
         })
 
-    # CTA (88%〜): ナレーション終了後の固定3秒エンドカード
+    # CTA: ナレーション終了後の固定3秒エンドカード
     shots.append({
         "id": "cta",
-        "startSec": t(0.875),
+        "startSec": round(content_sec, 2),
         "endSec": total_duration,
         "type": "color",
         "backgroundColor": "#1a1a2e",
