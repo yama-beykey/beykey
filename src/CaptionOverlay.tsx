@@ -32,14 +32,17 @@ const SingleCaption: React.FC<{
   style: TelopStyle;
 }> = ({ text, durationInFrames, style }) => {
   const frame = useCurrentFrame();
-  const FADE_FRAMES = 4;
+  const FADE_FRAMES = Math.min(4, Math.floor((durationInFrames - 1) / 2));
 
-  const opacity = interpolate(
-    frame,
-    [0, FADE_FRAMES, durationInFrames - FADE_FRAMES, durationInFrames],
-    [0, 1, 1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
+  const opacity =
+    FADE_FRAMES > 0
+      ? interpolate(
+          frame,
+          [0, FADE_FRAMES, durationInFrames - FADE_FRAMES, durationInFrames],
+          [0, 1, 1, 0],
+          { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        )
+      : 1;
 
   return (
     <AbsoluteFill
