@@ -18,8 +18,10 @@ if [ -z "$URL" ] || [ -z "$TOOL_NAME" ]; then
   exit 1
 fi
 
-if [ -z "$OPENAI_API_KEY" ]; then
-  echo "❌ OPENAI_API_KEY が設定されていません"
+if [ -z "$OPENAI_API_KEY" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+  echo "❌ API キーが設定されていません"
+  echo "   export ANTHROPIC_API_KEY='sk-ant-...'  (推奨)"
+  echo "   または"
   echo "   export OPENAI_API_KEY='sk-...'"
   exit 1
 fi
@@ -75,7 +77,7 @@ echo "   ${SS_COUNT}枚 撮影完了"
 
 # --- Phase 3: TTS ナレーション生成 ---
 echo ""
-echo "🎙 Phase 3: ナレーション生成 (OpenAI TTS)..."
+echo "🎙 Phase 3: ナレーション生成 (OpenAI TTS / macOS say)..."
 python3 "$SKILL_DIR/scripts/tts.py" \
   "$OUTPUT_DIR/script.json" \
   "$OUTPUT_DIR/narration.wav"

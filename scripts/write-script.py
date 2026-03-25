@@ -99,20 +99,18 @@ JSONのみ返してください。"""
 
     def call_llm(p, temperature=0.7):
         """Claude API を優先、失敗時は OpenAI にフォールバック"""
-        anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        if not anthropic_key:
-            # Claude Code Web 環境では ANTHROPIC_API_KEY は不要（内部認証）
-            try:
-                import anthropic as _anthropic
-                client = _anthropic.Anthropic()
-                msg = client.messages.create(
-                    model="claude-sonnet-4-6",
-                    max_tokens=2000,
-                    messages=[{"role": "user", "content": p}],
-                )
-                return msg.content[0].text
-            except Exception as e:
-                print(f"   Claude API 失敗: {e}。OpenAI にフォールバック...")
+        # 1. Anthropic Claude を試みる（ANTHROPIC_API_KEY or Claude Code 内部認証）
+        try:
+            import anthropic as _anthropic
+            client = _anthropic.Anthropic()
+            msg = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": p}],
+            )
+            return msg.content[0].text
+        except Exception as e:
+            print(f"   Claude API 失敗: {e}。OpenAI にフォールバック...")
 
         # OpenAI フォールバック
         oai_key = get_openai_key()

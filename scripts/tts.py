@@ -108,8 +108,29 @@ def generate_tts(text, output_path, voice="nova", speed=1.5):
     except Exception as e:
         print(f"⚠️ gTTS エラー: {e}")
 
-    # 3. サイレント音声を生成（文字数÷9.5文字/秒で長さ推定）
+    # 3. macOS say コマンド（日本語Kyokoボイス）
     import subprocess
+    import platform
+    if platform.system() == "Darwin":
+        try:
+            tmp_aiff = output_path.replace(".wav", "_tmp.aiff")
+            result = subprocess.run(
+                ["say", "-v", "Kyoko", "-r", "180", "-o", tmp_aiff, text],
+                capture_output=True, timeout=120,
+            )
+            if result.returncode == 0 and os.path.exists(tmp_aiff):
+                conv = subprocess.run(
+                    ["ffmpeg", "-y", "-i", tmp_aiff, "-ar", "22050", "-ac", "1", output_path],
+                    capture_output=True,
+                )
+                os.remove(tmp_aiff)
+                if conv.returncode == 0:
+                    print(f"✅ macOS say TTS 完了: {output_path}")
+                    return
+        except Exception as e:
+            print(f"⚠️ say コマンド失敗: {e}")
+
+    # 4. サイレント音声を生成（文字数÷9.5文字/秒で長さ推定）
     estimated_sec = len(text) / 9.5
     print(f"⚠️ サイレント音声を生成 ({estimated_sec:.1f}秒) — 後で実音声と差し替え可")
     subprocess.run(
