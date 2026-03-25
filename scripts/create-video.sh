@@ -44,8 +44,8 @@ cat > "$OUTPUT_DIR/metadata.json" << EOF
 EOF
 
 # --- Python依存パッケージ確認 ---
-python3 -c "import requests" 2>/dev/null || pip install requests -q
-python3 -c "import openai" 2>/dev/null || pip install openai -q
+python3 -c "import requests" 2>/dev/null || python3 -m pip install requests -q
+python3 -c "import openai" 2>/dev/null || python3 -m pip install openai -q
 
 # --- Phase 1: 台本生成 ---
 echo "📝 Phase 1: 台本生成 (GPT-4o)..."
@@ -58,7 +58,7 @@ echo "📸 Phase 2: スクリーンショット撮影..."
 # Playwright がなければインストール
 if ! python3 -c "from playwright.sync_api import sync_playwright" 2>/dev/null; then
   echo "   Playwright インストール中..."
-  pip install playwright -q
+  python3 -m pip install playwright -q
   python3 -m playwright install chromium
 fi
 
