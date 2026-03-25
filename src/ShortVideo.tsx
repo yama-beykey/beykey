@@ -64,6 +64,17 @@ export type EpisodeMeta = {
   durationSec: number;
 };
 
+export type OverlayConfig = {
+  topHeight: number;
+  bottomHeight: number;
+  topColor: string;
+  bottomColor: string;
+  logoText?: string;
+  logoFontSize?: number;
+  logoColor?: string;
+  logoImage?: string;
+};
+
 export type EpisodeStyle = {
   telop: TelopStyle;
   title: {
@@ -80,6 +91,7 @@ export type EpisodeStyle = {
     type: string;
     durationFrames: number;
   };
+  overlay?: OverlayConfig;
 };
 
 export type Episode = {
@@ -208,6 +220,72 @@ const VideoShot: React.FC<{
   );
 };
 
+// ===== 上下固定フレームオーバーレイ =====
+
+const FrameOverlay: React.FC<{ config: OverlayConfig }> = ({ config }) => {
+  const {
+    topHeight,
+    bottomHeight,
+    topColor,
+    bottomColor,
+    logoText,
+    logoFontSize = 36,
+    logoColor = "#FFFFFF",
+    logoImage,
+  } = config;
+
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      {/* 上帯 */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: topHeight,
+          background: topColor,
+          display: "flex",
+          alignItems: "center",
+          paddingLeft: 48,
+          paddingRight: 48,
+        }}
+      >
+        {logoImage ? (
+          <Img
+            src={staticFile(logoImage)}
+            style={{ height: topHeight * 0.55, objectFit: "contain" }}
+          />
+        ) : logoText ? (
+          <span
+            style={{
+              fontFamily,
+              fontSize: logoFontSize,
+              fontWeight: "900",
+              color: logoColor,
+              letterSpacing: 1,
+            }}
+          >
+            {logoText}
+          </span>
+        ) : null}
+      </div>
+
+      {/* 下帯 */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: bottomHeight,
+          background: bottomColor,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
 // ===== メインコンポジション =====
 
 export const ShortVideo: React.FC = () => {
@@ -315,6 +393,9 @@ export const ShortVideo: React.FC = () => {
           );
         })}
       </TransitionSeries>
+
+      {/* 上下フレームオーバーレイ: 映像の上・テロップの下 */}
+      {style.overlay && <FrameOverlay config={style.overlay} />}
 
       {/* テロップレイヤー: 映像の上に重ねる */}
       <CaptionOverlay subtitles={subtitles} telopStyle={telopStyle} />

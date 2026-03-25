@@ -240,7 +240,7 @@ def generate_episode(project_dir):
                 "paddingH": 24,
                 "paddingV": 14,
                 "position": "bottom",
-                "marginBottom": 180,
+                "marginBottom": 200,  # 下帯(160px) + 余白
             },
             "title": {
                 "fontFamily": "Noto Sans JP",
@@ -253,6 +253,20 @@ def generate_episode(project_dir):
                 "fontSize": 42,
             },
             "transition": {"type": "fade", "durationFrames": 8},
+            # 上下固定フレーム設定
+            # logoImage: "project/logo.png" のようにpublic/以下のパスを指定するとロゴ画像を表示
+            # logoText: テキストロゴ（logoImageがない場合に使用）
+            # topColor / bottomColor: CSSのbackground値（グラデーション可）
+            "overlay": {
+                "topHeight": 130,
+                "bottomHeight": 160,
+                "topColor": "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)",
+                "bottomColor": "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)",
+                "logoText": "@beykey",
+                "logoFontSize": 38,
+                "logoColor": "#FFFFFF",
+                "logoImage": None,
+            },
         },
     }
 
