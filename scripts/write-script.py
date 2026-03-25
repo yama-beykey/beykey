@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 URL + ツール名 → 縦動画台本（JSON形式）
-OpenAI GPT-4oで台本を自動生成する
+Claude claude-sonnet-4-6 または OpenAI GPT-4oで台本を自動生成する
 """
 import json
 import os
@@ -9,7 +9,7 @@ import sys
 import requests
 
 
-def get_api_key():
+def get_openai_key():
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
         config_paths = [
@@ -27,6 +27,10 @@ def get_api_key():
     return api_key
 
 
+def get_api_key():
+    return get_openai_key()
+
+
 def fetch_page_text(url):
     try:
         resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
@@ -41,11 +45,6 @@ def fetch_page_text(url):
 
 
 def write_script(url, tool_name, output_path):
-    api_key = get_api_key()
-    if not api_key:
-        print("❌ OPENAI_API_KEY が見つかりません")
-        sys.exit(1)
-
     page_text = fetch_page_text(url)
 
     prompt = f"""あなたはクリエイター向けAIツール紹介のショート動画の台本ライターです。
@@ -96,104 +95,72 @@ fullNarration は必ず **280文字以上300文字以下** で書いてくださ
 
 JSONのみ返してください。"""
 
-    resp = requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "gpt-4o",
-            "messages": [{"role": "user", "content": prompt}],
-            "response_format": {"type": "json_object"},
-            "temperature": 0.7,
-        },
-        timeout=60,
-    )
+    import re
 
-    if resp.status_code != 200:
-        print(f"❌ OpenAI API error: {resp.status_code} {resp.text}")
-        sys.exit(1)
+    def call_llm(p, temperature=0.7):
+        """Claude API を優先、失敗時は OpenAI にフォールバック"""
+        anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not anthropic_key:
+            # Claude Code Web 環境では ANTHROPIC_API_KEY は不要（内部認証）
+            try:
+                import anthropic as _anthropic
+                client = _anthropic.Anthropic()
+                msg = client.messages.create(
+                    model="claude-sonnet-4-6",
+                    max_tokens=2000,
+                    messages=[{"role": "user", "content": p}],
+                )
+                return msg.content[0].text
+            except Exception as e:
+                print(f"   Claude API 失敗: {e}。OpenAI にフォールバック...")
 
-    resp_json = resp.json()
-    message = resp_json["choices"][0]["message"]
-    content = message.get("content")
-
-    if content is None:
-        # refusal or unexpected structure — retry without json_object format
-        print("⚠️  json_object形式でcontentがNull。通常モードで再試行...")
-        resp2 = requests.post(
+        # OpenAI フォールバック
+        oai_key = get_openai_key()
+        if not oai_key:
+            print("❌ API キーが見つかりません (ANTHROPIC_API_KEY / OPENAI_API_KEY)")
+            sys.exit(1)
+        resp = requests.post(
             "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "gpt-4o",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-            },
+            headers={"Authorization": f"Bearer {oai_key}", "Content-Type": "application/json"},
+            json={"model": "gpt-4o", "messages": [{"role": "user", "content": p}],
+                  "response_format": {"type": "json_object"}, "temperature": temperature},
             timeout=60,
         )
-        if resp2.status_code != 200:
-            print(f"❌ OpenAI API error (retry): {resp2.status_code} {resp2.text}")
+        if resp.status_code != 200:
+            print(f"❌ OpenAI API error: {resp.status_code}")
             sys.exit(1)
-        content = resp2.json()["choices"][0]["message"]["content"]
+        return resp.json()["choices"][0]["message"]["content"]
 
+    def extract_json(text):
+        m = re.search(r"```json\s*([\s\S]*?)```", text)
+        if m:
+            return m.group(1)
+        s = text.find("{")
+        e = text.rfind("}") + 1
+        return text[s:e] if s >= 0 and e > s else text
+
+    content = call_llm(prompt)
     if not content:
-        print(f"❌ APIレスポンスにcontentがありません: {resp_json}")
+        print("❌ APIレスポンスが空です")
         sys.exit(1)
 
-    # JSON部分を抽出（```json ... ``` マークダウンに包まれる場合も対応）
-    import re
-    json_match = re.search(r"```json\s*([\s\S]*?)```", content)
-    if json_match:
-        content = json_match.group(1)
-    else:
-        # 最初の { から最後の } までを抽出
-        start = content.find("{")
-        end = content.rfind("}") + 1
-        if start >= 0 and end > start:
-            content = content[start:end]
-
-    script = json.loads(content)
+    script = json.loads(extract_json(content))
 
     # 文字数が短すぎる場合は一度だけ再試行
     char_count = len(script.get("fullNarration", ""))
     if char_count < 200:
         print(f"⚠️  fullNarration が{char_count}文字と短すぎます。再試行...")
-        retry_prompt = prompt + f"\n\n※前回の生成は{char_count}文字しかありませんでした。今度は必ず280文字以上300文字以下で書いてください。"
-        resp3 = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "gpt-4o",
-                "messages": [{"role": "user", "content": retry_prompt}],
-                "response_format": {"type": "json_object"},
-                "temperature": 0.8,
-            },
-            timeout=60,
+        retry_content = call_llm(
+            prompt + f"\n\n※前回の生成は{char_count}文字でした。必ず280文字以上300文字以下で。",
+            temperature=0.8,
         )
-        if resp3.status_code == 200:
-            retry_content = resp3.json()["choices"][0]["message"].get("content")
-            if retry_content:
-                json_match2 = re.search(r"```json\s*([\s\S]*?)```", retry_content)
-                if json_match2:
-                    retry_content = json_match2.group(1)
-                else:
-                    s2 = retry_content.find("{")
-                    e2 = retry_content.rfind("}") + 1
-                    if s2 >= 0 and e2 > s2:
-                        retry_content = retry_content[s2:e2]
-                retry_script = json.loads(retry_content)
-                retry_chars = len(retry_script.get("fullNarration", ""))
-                if retry_chars > char_count:
-                    script = retry_script
-                    char_count = retry_chars
-                    print(f"   再試行で{char_count}文字に改善")
+        if retry_content:
+            retry_script = json.loads(extract_json(retry_content))
+            retry_chars = len(retry_script.get("fullNarration", ""))
+            if retry_chars > char_count:
+                script = retry_script
+                char_count = retry_chars
+                print(f"   再試行で{char_count}文字に改善")
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(script, f, ensure_ascii=False, indent=2)

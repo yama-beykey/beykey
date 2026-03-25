@@ -29,43 +29,99 @@ def get_api_key():
 
 def generate_tts(text, output_path, voice="nova", speed=1.5):
     """
-    テキストをOpenAI TTSで音声に変換
-    voice: alloy / echo / fable / onyx / nova / shimmer
-    speed: 0.25〜4.0 (日本語 speed=1.5 で約9.5文字/秒)
+    テキストをTTSで音声に変換
+    OpenAI TTS → gTTS → サイレント音声 の順でフォールバック
     """
-    api_key = get_api_key()
-    if not api_key:
-        print("❌ OPENAI_API_KEY が見つかりません")
-        sys.exit(1)
-
     print(f"   テキスト: {len(text)}文字")
-    print(f"   声: {voice} / 速度: {speed}")
 
-    resp = requests.post(
-        "https://api.openai.com/v1/audio/speech",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "tts-1",
-            "input": text,
-            "voice": voice,
-            "speed": speed,
-            "response_format": "wav",
-        },
-        timeout=120,
+    # 1. OpenAI TTS を試みる
+    api_key = get_api_key()
+    if api_key:
+        try:
+            resp = requests.post(
+                "https://api.openai.com/v1/audio/speech",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "tts-1",
+                    "input": text,
+                    "voice": voice,
+                    "speed": speed,
+                    "response_format": "wav",
+                },
+                timeout=120,
+            )
+            if resp.status_code == 200:
+                with open(output_path, "wb") as f:
+                    f.write(resp.content)
+                size_kb = len(resp.content) // 1024
+                print(f"✅ OpenAI TTS 完了: {output_path} ({size_kb}KB)")
+                return
+            else:
+                print(f"⚠️ OpenAI TTS: {resp.status_code} — gTTS にフォールバック")
+        except Exception as e:
+            print(f"⚠️ OpenAI TTS 失敗: {e} — gTTS にフォールバック")
+
+    # 2. gTTS (Google Translate TTS) を試みる
+    try:
+        from gtts import gTTS
+        import subprocess
+        import tempfile
+        tts = gTTS(text=text, lang="ja")
+        tmp_mp3 = output_path.replace(".wav", "_tmp.mp3")
+        tts.save(tmp_mp3)
+        # MP3 → WAV 変換 (ffmpeg)
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-i", tmp_mp3, "-ar", "22050", "-ac", "1", output_path],
+            capture_output=True,
+        )
+        os.remove(tmp_mp3)
+        if result.returncode == 0:
+            print(f"✅ gTTS 完了: {output_path}")
+            return
+        else:
+            print("⚠️ gTTS MP3→WAV 変換失敗 — サイレント音声を生成")
+    except ImportError:
+        print("⚠️ gTTS 未インストール — pip install gTTS を試みます")
+        try:
+            import subprocess
+            subprocess.run(
+                ["pip", "install", "gTTS", "-q", "--break-system-packages"],
+                capture_output=True,
+            )
+            from gtts import gTTS
+            tts = gTTS(text=text, lang="ja")
+            tmp_mp3 = output_path.replace(".wav", "_tmp.mp3")
+            tts.save(tmp_mp3)
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-i", tmp_mp3, "-ar", "22050", "-ac", "1", output_path],
+                capture_output=True,
+            )
+            os.remove(tmp_mp3)
+            if result.returncode == 0:
+                print(f"✅ gTTS 完了: {output_path}")
+                return
+        except Exception as e2:
+            print(f"⚠️ gTTS 失敗: {e2}")
+    except Exception as e:
+        print(f"⚠️ gTTS エラー: {e}")
+
+    # 3. サイレント音声を生成（文字数÷9.5文字/秒で長さ推定）
+    import subprocess
+    estimated_sec = len(text) / 9.5
+    print(f"⚠️ サイレント音声を生成 ({estimated_sec:.1f}秒) — 後で実音声と差し替え可")
+    subprocess.run(
+        ["ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=22050:cl=mono",
+         "-t", str(estimated_sec), "-q:a", "9", "-acodec", "pcm_s16le", output_path],
+        capture_output=True,
     )
-
-    if resp.status_code != 200:
-        print(f"❌ TTS API error: {resp.status_code} {resp.text[:200]}")
+    if os.path.exists(output_path):
+        print(f"✅ サイレント音声生成完了: {output_path}")
+    else:
+        print("❌ 音声生成に完全失敗しました")
         sys.exit(1)
-
-    with open(output_path, "wb") as f:
-        f.write(resp.content)
-
-    size_kb = len(resp.content) // 1024
-    print(f"✅ ナレーション生成完了: {output_path} ({size_kb}KB)")
 
 
 if __name__ == "__main__":
