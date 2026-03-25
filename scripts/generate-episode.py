@@ -232,15 +232,16 @@ def generate_episode(project_dir):
         "style": {
             "telop": {
                 "fontFamily": "Noto Sans JP",
-                "fontSize": 48,
-                "fontWeight": "bold",
+                "fontSize": 72,
+                "fontWeight": "900",
                 "color": "#FFFFFF",
-                "backgroundColor": "rgba(0, 0, 0, 0.8)",
-                "borderRadius": 12,
-                "paddingH": 24,
-                "paddingV": 14,
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "paddingH": 0,
+                "paddingV": 0,
                 "position": "bottom",
-                "marginBottom": 200,  # 下帯(160px) + 余白
+                "marginBottom": 210,  # 下帯(160px) + 余白
+                "accentColor": "#4AACFF",
             },
             "title": {
                 "fontFamily": "Noto Sans JP",
