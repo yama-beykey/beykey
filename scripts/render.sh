@@ -105,7 +105,7 @@ npx remotion render src/index.tsx ShortVideo \
   --width "$WIDTH" \
   --height "$HEIGHT" \
   --fps "$FPS" \
-  --frames "0-$DURATION" \
+  --frames "0-$((DURATION - 1))" \
   --codec h264 \
   --crf 18
 
