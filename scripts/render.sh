@@ -65,6 +65,9 @@ fi
 # episode.json
 cp "$DIR/episode.json" "$SKILL_DIR/public/project/"
 
+# actions_timeline.json (あれば)
+[ -f "$DIR/actions_timeline.json" ] && cp "$DIR/actions_timeline.json" "$SKILL_DIR/public/project/"
+
 echo "  コピー完了"
 
 # --- Phase 4: Remotionレンダリング ---

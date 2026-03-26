@@ -79,6 +79,16 @@ fullNarration は必ず **280文字以上300文字以下** で書いてくださ
 - 敬体（です・ます）
 - CTAは含めない（エンドカードで別途表示するため）
 
+## ブラウザ操作アクション
+ナレーションの各パートに合わせて、画面で何を見せるかを actions 配列で指定してください。
+アクションタイプ:
+- navigate: 指定URLに移動
+- scroll: ページをスクロール（scrollY はピクセル）
+- highlight: 特定要素にマウスをホバー（selector は CSS セレクタ）
+
+タイミングは parts の startSec に合わせること。
+同じページを異なるスクロール位置で見せることで、ナレーションと映像を一致させてください。
+
 ## 出力形式（JSON）
 {{
   "title": "動画タイトル（20文字以内）",
@@ -90,7 +100,14 @@ fullNarration は必ず **280文字以上300文字以下** で書いてくださ
     {{"id": "demo",    "startSec": 20, "endSec": 34, "text": "セリフ（約110文字）"}},
     {{"id": "result",  "startSec": 34, "endSec": 38, "text": "セリフ（約30文字）"}}
   ],
-  "fullNarration": "全5パートを繋げた完全ナレーション文。必ず280〜300文字。"
+  "fullNarration": "全5パートを繋げた完全ナレーション文。必ず280〜300文字。",
+  "actions": [
+    {{"t": 0,  "type": "navigate", "url": "{url}", "label": "トップページ表示"}},
+    {{"t": 4,  "type": "scroll",   "scrollY": 600, "label": "問題を示す箇所を表示"}},
+    {{"t": 11, "type": "navigate", "url": "{url}", "label": "機能紹介セクション", "scrollY": 0}},
+    {{"t": 20, "type": "scroll",   "scrollY": 1200, "label": "デモエリア表示"}},
+    {{"t": 34, "type": "navigate", "url": "{url}/pricing", "label": "料金ページ"}}
+  ]
 }}
 
 JSONのみ返してください。"""

@@ -45,6 +45,14 @@ def generate_episode(project_dir):
         with open(transcript_path) as f:
             transcript = json.load(f)
 
+    # actions_timeline.json (record_with_actions が生成)
+    actions_timeline_path = os.path.join(project_dir, "actions_timeline.json")
+    actions_timeline = None
+    if os.path.exists(actions_timeline_path):
+        with open(actions_timeline_path, encoding="utf-8") as f:
+            actions_timeline = json.load(f)
+        print(f"   📍 actionsTimeline 読み込み: {len(actions_timeline)}件")
+
     subtitles = transcript.get("subtitles", [])
 
     # 動画ファイルの尺を取得
@@ -198,6 +206,19 @@ def generate_episode(project_dir):
             "label": "結果 + 料金",
         })
 
+    # actionsTimeline がある場合はデモ映像を 1 ショットに統合
+    # (AutoZoom がズームを担うため、複数ショット分割は不要)
+    if actions_timeline and has_demo:
+        shots = [{
+            "id": "demo",
+            "startSec": 0,
+            "endSec": round(total_duration, 2),
+            "type": "video",
+            "src": "demo-full.mp4",
+            "videoStartSec": 0,
+            "label": "操作録画（AutoZoomズーム付き）",
+        }]
+
     # episode.json組み立て
     episode = {
         "meta": {
@@ -224,6 +245,7 @@ def generate_episode(project_dir):
         },
         "shots": shots,
         "subtitles": transcript.get("subtitles", []),
+        **({"actionsTimeline": actions_timeline} if actions_timeline else {}),
         "style": {
             "telop": {
                 "fontFamily": "Noto Sans JP",

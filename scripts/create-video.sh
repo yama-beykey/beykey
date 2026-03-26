@@ -75,16 +75,29 @@ python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
 SS_COUNT=$(ls "$OUTPUT_DIR/screenshots/"*.png 2>/dev/null | wc -l | tr -d ' ')
 echo "   ${SS_COUNT}枚 撮影完了"
 
-# --- Phase 2b: ブラウザ録画 ---
+# --- Phase 2b: actions に沿ったブラウザ操作録画 ---
 echo ""
-echo "🎬 Phase 2b: ブラウザ録画 (Playwright)..."
-python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
-  --record "$OUTPUT_DIR/demo-full.mp4" \
-  "$URL" \
-  2>/dev/null || echo "   ⚠️  録画スキップ（スクリーンショットのみで続行）"
+echo "🎬 Phase 2b: ブラウザ操作録画 (Playwright + actions)..."
+
+# script.json に actions があれば record_with_actions、なければ通常録画
+if python3 -c "import json,sys; d=json.load(open('$OUTPUT_DIR/script.json')); sys.exit(0 if d.get('actions') else 1)" 2>/dev/null; then
+  python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
+    --record-actions \
+    "$OUTPUT_DIR/script.json" \
+    "$OUTPUT_DIR/demo-full.mp4" \
+    "$OUTPUT_DIR/actions_timeline.json" \
+    2>/dev/null || echo "   ⚠️  操作録画スキップ（スクリーンショットのみで続行）"
+else
+  # フォールバック: 通常スクロール録画
+  python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
+    --record "$OUTPUT_DIR/demo-full.mp4" \
+    "$URL" \
+    2>/dev/null || echo "   ⚠️  録画スキップ（スクリーンショットのみで続行）"
+fi
 
 if [ -f "$OUTPUT_DIR/demo-full.mp4" ]; then
   echo "   ✅ 録画完了"
+  [ -f "$OUTPUT_DIR/actions_timeline.json" ] && echo "   📍 actionsTimeline 生成済み"
 else
   echo "   ℹ️  録画なし — スクリーンショットで代替"
 fi

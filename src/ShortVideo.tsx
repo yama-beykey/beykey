@@ -29,6 +29,8 @@ import {
 import { fade } from "@remotion/transitions/fade";
 import { CaptionOverlay } from "./CaptionOverlay";
 import type { SubtitleItem, TelopStyle } from "./CaptionOverlay";
+import { AutoZoom } from "./AutoZoom";
+import type { ActionPoint } from "./AutoZoom";
 
 // Noto Sans JP フォント名（レンダリング環境にフォントがインストール済みの場合はこのまま使用）
 // ネットワーク接続がある環境では loadFont() を呼ぶことでWebフォントを確実に読み込める:
@@ -105,6 +107,8 @@ export type Episode = {
   shots: Shot[];
   subtitles: SubtitleItem[];
   style: EpisodeStyle;
+  /** actions_timeline.json から生成されたズームタイムライン (省略可) */
+  actionsTimeline?: ActionPoint[];
 };
 
 // ===== Ken Burns 静止画コンポーネント =====
@@ -305,7 +309,7 @@ export const ShortVideo: React.FC = () => {
     return <AbsoluteFill style={{ backgroundColor: "#000" }} />;
   }
 
-  const { shots, subtitles, style, files } = episode;
+  const { shots, subtitles, style, files, actionsTimeline } = episode;
   const transitionDurationFrames = style.transition.durationFrames ?? 8;
 
   // ショットごとのフレーム尺を計算
@@ -337,13 +341,26 @@ export const ShortVideo: React.FC = () => {
 
           const sceneElement = (() => {
             if (shot.type === "video" && shot.src) {
-              return (
+              const videoStartSec = shot.videoStartSec ?? 0;
+              const videoContent = (
                 <VideoShot
                   src={staticFile(`project/${shot.src}`)}
-                  startOffsetSec={shot.videoStartSec ?? 0}
+                  startOffsetSec={videoStartSec}
                   durationInFrames={durationInFrames}
                 />
               );
+              // actionsTimeline がある場合はビデオをズームカメラでラップ
+              if (actionsTimeline && actionsTimeline.length > 0) {
+                return (
+                  <AutoZoom
+                    actionsTimeline={actionsTimeline}
+                    videoStartSec={videoStartSec}
+                  >
+                    {videoContent}
+                  </AutoZoom>
+                );
+              }
+              return videoContent;
             }
             if (shot.type === "image" && shot.src) {
               return (
