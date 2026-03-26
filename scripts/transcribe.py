@@ -46,19 +46,17 @@ def _add_english_translations(subtitles, api_key=None):
     texts = [s["text"] for s in subtitles]
     n = len(texts)
     prompt = (
-        "以下の日本語テキストを英語に翻訳し、各テロップに強調ワードと絵文字、いらすとや検索キーワードも提案してください。\n\n"
+        "以下の日本語テキストを英語に翻訳し、各テロップに強調ワードと絵文字を提案してください。\n\n"
         "ルール:\n"
         "- textEn: 自然な英語訳（短く簡潔に）\n"
         "- highlight: textEn中で強調したい重要単語を1〜2語（大文字で指定）。"
         "全テロップの30〜40%程度に入れる（毎回入れない）\n"
         "- emoji: 文脈に合う絵文字を1つ。全テロップの20〜25%程度のみに入れる"
-        "（多すぎるとうるさいので厳選する）。不要な場合はnull\n"
-        "- irasutoyaKeyword: いらすとやで検索するための短い日本語キーワード（名詞1〜2語）。"
-        "全テロップの40〜50%程度に入れる。視覚的に表現できる具体的な名詞を選ぶ（例: パソコン、スマートフォン、アイデア、困った人、ビジネス）。不要な場合はnull\n\n"
+        "（多すぎるとうるさいので厳選する）。不要な場合はnull\n\n"
         f"テキスト数: {n}件\n"
         f"日本語テキスト:\n{json.dumps(texts, ensure_ascii=False)}\n\n"
         "出力（JSONのみ）:\n"
-        '{"items": [{"textEn": "...", "highlight": ["WORD"], "emoji": "🔥", "irasutoyaKeyword": "パソコン"}, ...]}'
+        '{"items": [{"textEn": "...", "highlight": ["WORD"], "emoji": "🔥"}, ...]}'
     )
 
     try:
@@ -86,9 +84,6 @@ def _add_english_translations(subtitles, api_key=None):
             em = item.get("emoji")
             if em:
                 sub["emoji"] = em
-            kw = item.get("irasutoyaKeyword")
-            if kw:
-                sub["irasutoyaKeyword"] = kw
         print(f"   英訳追加: {len(items)}件")
     except Exception as e:
         print(f"⚠️ 英訳スキップ ({e})")

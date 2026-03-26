@@ -262,16 +262,15 @@ const FrameOverlay: React.FC<{ config: OverlayConfig }> = ({ config }) => {
         </div>
       )}
 
-      {/* 下部黒グラデーション: テロップ可読性のため常時表示 */}
+      {/* 下部黒エリア: テロップ可読性のため常時表示 */}
       <div
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          height: 560,
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0) 100%)",
+          height: 420,
+          background: "rgba(0,0,0,0.88)",
           pointerEvents: "none",
         }}
       />

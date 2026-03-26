@@ -9,42 +9,6 @@ import os
 import subprocess
 
 
-def fetch_irasutoya_image(keyword, save_path):
-    """いらすとやからキーワードに合う透過PNG画像をダウンロード"""
-    import urllib.parse
-    import urllib.request
-    import re as _re
-    try:
-        encoded = urllib.parse.quote(keyword)
-        feed_url = f"https://www.irasutoya.com/feeds/posts/default?q={encoded}&alt=json&max-results=3"
-        req = urllib.request.Request(feed_url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read())
-        entries = data.get("feed", {}).get("entry", [])
-        for entry in entries:
-            # ブログ本文HTMLから実際の透過PNG URLを抽出（白背景サムネイルではなく）
-            content_html = entry.get("content", {}).get("$t", "")
-            png_matches = _re.findall(
-                r'(https://blogger\.googleusercontent\.com/[^"\'>\s]+\.png)',
-                content_html,
-            )
-            img_url = png_matches[0] if png_matches else ""
-            # フォールバック: サムネイルJPEGを透過PNG相当サイズで取得
-            if not img_url:
-                thumbnail = entry.get("media$thumbnail", {})
-                img_url = thumbnail.get("url", "")
-                if img_url:
-                    img_url = _re.sub(r"/s\d+-c/", "/s400/", img_url)
-            if img_url:
-                req2 = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req2, timeout=8) as img_resp:
-                    with open(save_path, "wb") as f:
-                        f.write(img_resp.read())
-                return True
-    except Exception:
-        pass
-    return False
-
 
 def get_duration(filepath):
     """ffprobeで動画/音声の尺を取得"""
@@ -81,27 +45,7 @@ def generate_episode(project_dir):
         with open(transcript_path) as f:
             transcript = json.load(f)
 
-    # いらすとや画像をダウンロード
-    irasutoya_dir = os.path.join(project_dir, "irasutoya")
     subtitles = transcript.get("subtitles", [])
-    has_irasutoya = False
-    for i, sub in enumerate(subtitles):
-        keyword = sub.get("irasutoyaKeyword", "")
-        if not keyword:
-            continue
-        os.makedirs(irasutoya_dir, exist_ok=True)
-        img_filename = f"{i:02d}-{keyword[:20].replace('/', '_')}.png"
-        img_path = os.path.join(irasutoya_dir, img_filename)
-        if not os.path.exists(img_path):
-            ok = fetch_irasutoya_image(keyword, img_path)
-            if ok:
-                sub["irasutoyaImage"] = f"irasutoya/{img_filename}"
-                has_irasutoya = True
-        elif os.path.exists(img_path):
-            sub["irasutoyaImage"] = f"irasutoya/{img_filename}"
-            has_irasutoya = True
-    if has_irasutoya:
-        print(f"   いらすとや: {sum(1 for s in subtitles if s.get('irasutoyaImage'))}枚取得")
 
     # 動画ファイルの尺を取得
     demo_path = os.path.join(project_dir, "demo-full.mp4")

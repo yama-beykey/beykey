@@ -5,8 +5,6 @@ import {
   useVideoConfig,
   interpolate,
   useCurrentFrame,
-  Img,
-  staticFile,
 } from "remotion";
 
 export type SubtitleItem = {
@@ -16,7 +14,6 @@ export type SubtitleItem = {
   textEn?: string;
   highlight?: string[];  // words to color-highlight (uppercase match)
   emoji?: string;
-  irasutoyaImage?: string;
 };
 
 export type TelopStyle = {
@@ -137,22 +134,6 @@ const SingleCaption: React.FC<{
         transformOrigin: isBottom ? "bottom center" : "top center",
       }}
     >
-      {/* いらすとやイラスト（透過PNG切り抜き） */}
-      {item.irasutoyaImage && (
-        <Img
-          src={staticFile(`project/${item.irasutoyaImage}`)}
-          style={{
-            width: 240,
-            height: 240,
-            objectFit: "contain",
-            marginBottom: 12,
-            filter:
-              "drop-shadow(0 8px 20px rgba(0,0,0,0.8))" +
-              " drop-shadow(0 2px 6px rgba(0,0,0,0.6))",
-          }}
-        />
-      )}
-
       {/* Emoji */}
       {item.emoji && (
         <div
