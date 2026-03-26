@@ -105,6 +105,11 @@ def generate_episode(project_dir):
 
     # 動画ファイルの尺を取得
     demo_path = os.path.join(project_dir, "demo-full.mp4")
+    # screen-recording.mp4 があれば demo-full.mp4 より優先
+    screen_rec_path = os.path.join(project_dir, "screen-recording.mp4")
+    if os.path.exists(screen_rec_path) and not os.path.exists(demo_path):
+        import shutil
+        shutil.copy2(screen_rec_path, demo_path)
     demo_duration = get_duration(demo_path) if os.path.exists(demo_path) else 90
 
     narration_path = None
@@ -299,7 +304,7 @@ def generate_episode(project_dir):
                 "paddingH": 0,
                 "paddingV": 0,
                 "position": "bottom",
-                "marginBottom": 210,  # 下帯(160px) + 余白
+                "marginBottom": 160,  # 下帯なし、プラットフォームUI回避
                 "accentColor": "#4AACFF",
             },
             "title": {
@@ -309,7 +314,7 @@ def generate_episode(project_dir):
                 "color": "#FFFFFF",
             },
             "cta": {
-                "text": "クリエイター向けAI毎日紹介中\nフォローしてね",
+                "text": "B-STUDIO\nAI情報を毎日発信中\nフォローして！",
                 "fontSize": 42,
             },
             "transition": {"type": "fade", "durationFrames": 8},
@@ -318,14 +323,14 @@ def generate_episode(project_dir):
             # logoText: テキストロゴ（logoImageがない場合に使用）
             # topColor / bottomColor: CSSのbackground値（グラデーション可）
             "overlay": {
-                "topHeight": 130,
-                "bottomHeight": 160,
-                "topColor": "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)",
-                "bottomColor": "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)",
-                "logoText": "@beykey",
-                "logoFontSize": 38,
+                "topHeight": 160,
+                "bottomHeight": 0,
+                "topColor": "linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 55%, rgba(0,0,0,0) 100%)",
+                "bottomColor": "none",
+                "logoText": "B-STUDIO",
+                "logoFontSize": 42,
                 "logoColor": "#FFFFFF",
-                "logoImage": None,
+                "logoImage": "logo.png" if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "logo.png")) else None,
             },
         },
     }

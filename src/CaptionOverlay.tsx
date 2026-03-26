@@ -113,13 +113,8 @@ const SingleCaption: React.FC<{
   const jFontSize = Math.round(style.fontSize * 0.36);
   const emojiFontSize = Math.round(style.fontSize * 1.0);
 
-  const jaOutline = [
-    "1px 1px 0 rgba(0,0,0,0.9)",
-    "-1px -1px 0 rgba(0,0,0,0.9)",
-    "1px -1px 0 rgba(0,0,0,0.9)",
-    "-1px 1px 0 rgba(0,0,0,0.9)",
-    "0 2px 12px rgba(0,0,0,0.7)",
-  ].join(", ");
+  const pillBg = "rgba(0, 0, 0, 0.62)";
+  const hasPill = !!(item.textEn || item.text);
 
   return (
     <AbsoluteFill
@@ -137,63 +132,80 @@ const SingleCaption: React.FC<{
         transformOrigin: isBottom ? "bottom center" : "top center",
       }}
     >
-      {/* Emoji */}
-      {item.emoji && (
-        <div
-          style={{
-            fontSize: emojiFontSize,
-            lineHeight: 1,
-            marginBottom: 8,
-            filter: "drop-shadow(0 3px 8px rgba(0,0,0,0.6))",
-          }}
-        >
-          {item.emoji}
-        </div>
-      )}
-
-      {/* いらすとやイラスト（透過PNG切り抜き） */}
+      {/* いらすとやイラスト（透過PNG切り抜き・ピルの外） */}
       {item.irasutoyaImage && (
         <Img
           src={staticFile(`project/${item.irasutoyaImage}`)}
           style={{
-            width: 220,
-            height: 220,
+            width: 240,
+            height: 240,
             objectFit: "contain",
-            marginBottom: 12,
+            marginBottom: 10,
             filter:
-              "drop-shadow(0 6px 16px rgba(0,0,0,0.6))" +
-              " drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
+              "drop-shadow(0 8px 20px rgba(0,0,0,0.7))" +
+              " drop-shadow(0 2px 6px rgba(0,0,0,0.5))",
           }}
         />
       )}
 
-      {/* English — primary, large, uppercase */}
-      {item.textEn && (
-        <EnglishText
-          text={item.textEn}
-          highlight={item.highlight}
-          fontSize={style.fontSize}
-          fontFamily={style.fontFamily}
-          accentColor={accentColor}
-        />
-      )}
-
-      {/* Japanese — secondary, small */}
-      {item.text && (
+      {/* テキストエリア: ピル背景 */}
+      {hasPill && (
         <div
           style={{
-            fontFamily: style.fontFamily,
-            fontSize: jFontSize,
-            fontWeight: 500,
-            color: "rgba(210, 225, 255, 0.88)",
-            textShadow: jaOutline,
-            marginTop: item.textEn ? 10 : 0,
-            letterSpacing: "0.02em",
-            lineHeight: 1.4,
-            textAlign: "center",
+            background: pillBg,
+            borderRadius: 20,
+            paddingLeft: 28,
+            paddingRight: 28,
+            paddingTop: item.emoji ? 10 : 16,
+            paddingBottom: 16,
+            maxWidth: 980,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
-          {item.text}
+          {/* Emoji */}
+          {item.emoji && (
+            <div
+              style={{
+                fontSize: emojiFontSize,
+                lineHeight: 1,
+                marginBottom: 6,
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
+              }}
+            >
+              {item.emoji}
+            </div>
+          )}
+
+          {/* English — primary, large, uppercase */}
+          {item.textEn && (
+            <EnglishText
+              text={item.textEn}
+              highlight={item.highlight}
+              fontSize={style.fontSize}
+              fontFamily={style.fontFamily}
+              accentColor={accentColor}
+            />
+          )}
+
+          {/* Japanese — secondary */}
+          {item.text && (
+            <div
+              style={{
+                fontFamily: style.fontFamily,
+                fontSize: jFontSize,
+                fontWeight: 600,
+                color: "rgba(220, 232, 255, 0.92)",
+                marginTop: item.textEn ? 8 : 0,
+                letterSpacing: "0.03em",
+                lineHeight: 1.5,
+                textAlign: "center",
+              }}
+            >
+              {item.text}
+            </div>
+          )}
         </div>
       )}
     </AbsoluteFill>

@@ -75,6 +75,20 @@ python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
 SS_COUNT=$(ls "$OUTPUT_DIR/screenshots/"*.png 2>/dev/null | wc -l | tr -d ' ')
 echo "   ${SS_COUNT}枚 撮影完了"
 
+# --- Phase 2b: ブラウザ録画 ---
+echo ""
+echo "🎬 Phase 2b: ブラウザ録画 (Playwright)..."
+python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
+  --record "$OUTPUT_DIR/demo-full.mp4" \
+  "$URL" \
+  2>/dev/null || echo "   ⚠️  録画スキップ（スクリーンショットのみで続行）"
+
+if [ -f "$OUTPUT_DIR/demo-full.mp4" ]; then
+  echo "   ✅ 録画完了"
+else
+  echo "   ℹ️  録画なし — スクリーンショットで代替"
+fi
+
 # --- Phase 3: TTS ナレーション生成 ---
 echo ""
 echo "🎙 Phase 3: ナレーション生成 (OpenAI TTS / macOS say)..."

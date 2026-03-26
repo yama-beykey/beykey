@@ -229,59 +229,85 @@ const FrameOverlay: React.FC<{ config: OverlayConfig }> = ({ config }) => {
     topColor,
     bottomColor,
     logoText,
-    logoFontSize = 36,
+    logoFontSize = 42,
     logoColor = "#FFFFFF",
     logoImage,
   } = config;
 
   return (
     <AbsoluteFill style={{ pointerEvents: "none" }}>
-      {/* 上帯 */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: topHeight,
-          background: topColor,
-          display: "flex",
-          alignItems: "center",
-          paddingLeft: 48,
-          paddingRight: 48,
-        }}
-      >
-        {logoImage ? (
-          <Img
-            src={staticFile(logoImage)}
-            style={{ height: topHeight * 0.55, objectFit: "contain" }}
-          />
-        ) : logoText ? (
-          <span
-            style={{
-              fontFamily,
-              fontSize: logoFontSize,
-              fontWeight: "900",
-              color: logoColor,
-              letterSpacing: 1,
-            }}
-          >
-            {logoText}
-          </span>
-        ) : null}
-      </div>
+      {/* 上帯: ブランドロゴ表示 */}
+      {topHeight > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topHeight,
+            background: topColor,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingLeft: 48,
+            paddingRight: 48,
+          }}
+        >
+          {logoImage ? (
+            <Img
+              src={staticFile(logoImage)}
+              style={{ height: topHeight * 0.48, objectFit: "contain" }}
+            />
+          ) : logoText ? (
+            <span
+              style={{
+                fontFamily,
+                fontSize: logoFontSize,
+                fontWeight: "900",
+                color: logoColor,
+                letterSpacing: 3,
+                textTransform: "uppercase" as const,
+                textShadow: "0 2px 12px rgba(0,0,0,0.7)",
+              }}
+            >
+              {logoText}
+            </span>
+          ) : null}
+        </div>
+      )}
 
-      {/* 下帯 */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: bottomHeight,
-          background: bottomColor,
-        }}
-      />
+      {/* 下帯: bottomHeight > 0 のときのみ表示 */}
+      {bottomHeight > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: bottomHeight,
+            background: bottomColor,
+          }}
+        />
+      )}
+
+      {/* 右下ウォーターマーク（下帯なし時） */}
+      {bottomHeight === 0 && logoText && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 48,
+            right: 48,
+            fontFamily,
+            fontSize: 28,
+            fontWeight: "700",
+            color: "rgba(255,255,255,0.55)",
+            letterSpacing: 2,
+            textTransform: "uppercase" as const,
+          }}
+        >
+          {logoText}
+        </div>
+      )}
     </AbsoluteFill>
   );
 };
