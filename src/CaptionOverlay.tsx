@@ -113,8 +113,13 @@ const SingleCaption: React.FC<{
   const jFontSize = Math.round(style.fontSize * 0.36);
   const emojiFontSize = Math.round(style.fontSize * 1.0);
 
-  const pillBg = "rgba(0, 0, 0, 0.62)";
-  const hasPill = !!(item.textEn || item.text);
+  const jaOutline = [
+    "2px 2px 0 rgba(0,0,0,0.95)",
+    "-2px -2px 0 rgba(0,0,0,0.95)",
+    "2px -2px 0 rgba(0,0,0,0.95)",
+    "-2px 2px 0 rgba(0,0,0,0.95)",
+    "0 3px 14px rgba(0,0,0,0.8)",
+  ].join(", ");
 
   return (
     <AbsoluteFill
@@ -125,14 +130,14 @@ const SingleCaption: React.FC<{
         alignItems: "center",
         paddingBottom: isBottom ? style.marginBottom : 0,
         paddingTop: isBottom ? 0 : 80,
-        paddingLeft: 32,
-        paddingRight: 32,
+        paddingLeft: 40,
+        paddingRight: 40,
         opacity,
         transform: `scaleY(${scaleY})`,
         transformOrigin: isBottom ? "bottom center" : "top center",
       }}
     >
-      {/* いらすとやイラスト（透過PNG切り抜き・ピルの外） */}
+      {/* いらすとやイラスト（透過PNG切り抜き） */}
       {item.irasutoyaImage && (
         <Img
           src={staticFile(`project/${item.irasutoyaImage}`)}
@@ -140,72 +145,55 @@ const SingleCaption: React.FC<{
             width: 240,
             height: 240,
             objectFit: "contain",
-            marginBottom: 10,
+            marginBottom: 12,
             filter:
-              "drop-shadow(0 8px 20px rgba(0,0,0,0.7))" +
-              " drop-shadow(0 2px 6px rgba(0,0,0,0.5))",
+              "drop-shadow(0 8px 20px rgba(0,0,0,0.8))" +
+              " drop-shadow(0 2px 6px rgba(0,0,0,0.6))",
           }}
         />
       )}
 
-      {/* テキストエリア: ピル背景 */}
-      {hasPill && (
+      {/* Emoji */}
+      {item.emoji && (
         <div
           style={{
-            background: pillBg,
-            borderRadius: 20,
-            paddingLeft: 28,
-            paddingRight: 28,
-            paddingTop: item.emoji ? 10 : 16,
-            paddingBottom: 16,
-            maxWidth: 980,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            fontSize: emojiFontSize,
+            lineHeight: 1,
+            marginBottom: 8,
+            filter: "drop-shadow(0 3px 8px rgba(0,0,0,0.8))",
           }}
         >
-          {/* Emoji */}
-          {item.emoji && (
-            <div
-              style={{
-                fontSize: emojiFontSize,
-                lineHeight: 1,
-                marginBottom: 6,
-                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
-              }}
-            >
-              {item.emoji}
-            </div>
-          )}
+          {item.emoji}
+        </div>
+      )}
 
-          {/* English — primary, large, uppercase */}
-          {item.textEn && (
-            <EnglishText
-              text={item.textEn}
-              highlight={item.highlight}
-              fontSize={style.fontSize}
-              fontFamily={style.fontFamily}
-              accentColor={accentColor}
-            />
-          )}
+      {/* English — primary, large, uppercase */}
+      {item.textEn && (
+        <EnglishText
+          text={item.textEn}
+          highlight={item.highlight}
+          fontSize={style.fontSize}
+          fontFamily={style.fontFamily}
+          accentColor={accentColor}
+        />
+      )}
 
-          {/* Japanese — secondary */}
-          {item.text && (
-            <div
-              style={{
-                fontFamily: style.fontFamily,
-                fontSize: jFontSize,
-                fontWeight: 600,
-                color: "rgba(220, 232, 255, 0.92)",
-                marginTop: item.textEn ? 8 : 0,
-                letterSpacing: "0.03em",
-                lineHeight: 1.5,
-                textAlign: "center",
-              }}
-            >
-              {item.text}
-            </div>
-          )}
+      {/* Japanese — secondary */}
+      {item.text && (
+        <div
+          style={{
+            fontFamily: style.fontFamily,
+            fontSize: jFontSize,
+            fontWeight: 700,
+            color: "#FFFFFF",
+            textShadow: jaOutline,
+            marginTop: item.textEn ? 10 : 0,
+            letterSpacing: "0.03em",
+            lineHeight: 1.5,
+            textAlign: "center",
+          }}
+        >
+          {item.text}
         </div>
       )}
     </AbsoluteFill>

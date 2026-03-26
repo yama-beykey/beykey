@@ -27,7 +27,7 @@ def get_api_key():
     return api_key
 
 
-def generate_tts(text, output_path, voice="nova", speed=1.5):
+def generate_tts(text, output_path, voice="onyx", speed=1.4):
     """
     テキストをTTSで音声に変換
     OpenAI TTS → gTTS → サイレント音声 の順でフォールバック
@@ -115,7 +115,7 @@ def generate_tts(text, output_path, voice="nova", speed=1.5):
         try:
             tmp_aiff = output_path.replace(".wav", "_tmp.aiff")
             result = subprocess.run(
-                ["say", "-v", "Kyoko", "-r", "180", "-o", tmp_aiff, text],
+                ["say", "-v", "Otoya", "-r", "175", "-o", tmp_aiff, text],
                 capture_output=True, timeout=120,
             )
             if result.returncode == 0 and os.path.exists(tmp_aiff):

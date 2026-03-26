@@ -94,7 +94,9 @@ echo ""
 echo "🎙 Phase 3: ナレーション生成 (OpenAI TTS / macOS say)..."
 python3 "$SKILL_DIR/scripts/tts.py" \
   "$OUTPUT_DIR/script.json" \
-  "$OUTPUT_DIR/narration.wav"
+  "$OUTPUT_DIR/narration.wav" \
+  "onyx" \
+  1.4
 
 # --- Phase 4: Remotion動画生成 ---
 echo ""
