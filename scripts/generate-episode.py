@@ -67,10 +67,7 @@ def generate_episode(project_dir):
 
     # 全体の尺（ナレーション基準、なければデモ動画基準、最大90秒）
     total_duration = min(narration_duration or demo_duration, 90)
-    # ナレーション後に3秒CTAを追加
-    CTA_SEC = 3.0
-    content_sec = total_duration      # ナレーションが流れる時間
-    total_duration = content_sec + CTA_SEC
+    content_sec = total_duration
 
     # スクリーンショットを収集
     ss_dir = os.path.join(project_dir, "screenshots")
@@ -200,16 +197,6 @@ def generate_episode(project_dir):
             "type": "color", "backgroundColor": "#1a1a2e",
             "label": "結果 + 料金",
         })
-
-    # CTA: ナレーション終了後の固定3秒エンドカード
-    shots.append({
-        "id": "cta",
-        "startSec": round(content_sec, 2),
-        "endSec": total_duration,
-        "type": "color",
-        "backgroundColor": "#1a1a2e",
-        "label": "CTA — フォローしてね",
-    })
 
     # episode.json組み立て
     episode = {

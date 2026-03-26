@@ -83,6 +83,15 @@ async def take_screenshots(urls, output_dir, width=1080, height=1920):
                 except Exception:
                     pass
                 await asyncio.sleep(2)
+                # ページを強制ダークモードに変換（白背景対策）
+                await page.add_style_tag(content="""
+                    html { filter: invert(1) hue-rotate(180deg) !important; background:#000 !important; }
+                    img, video, picture, canvas, iframe,
+                    [style*="background-image"] {
+                        filter: invert(1) hue-rotate(180deg) !important;
+                    }
+                """)
+                await asyncio.sleep(0.5)
                 await page.screenshot(path=output_path, full_page=False, timeout=15000)
                 saved.append(output_path)
                 print(f"   ✅ 保存: {filename}")
@@ -130,6 +139,16 @@ async def record_browser(url, output_path, width=1080, height=1920, duration_sec
 
             # ページロード待機
             await asyncio.sleep(3)
+
+            # 強制ダークモード（白背景対策）
+            await page.add_style_tag(content="""
+                html { filter: invert(1) hue-rotate(180deg) !important; background:#000 !important; }
+                img, video, picture, canvas, iframe,
+                [style*="background-image"] {
+                    filter: invert(1) hue-rotate(180deg) !important;
+                }
+            """)
+            await asyncio.sleep(1)
 
             # スムーズスクロールでサイトを見せる
             scroll_steps = int(duration_sec * 1.5)
