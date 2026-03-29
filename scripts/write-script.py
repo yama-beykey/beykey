@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-URL + ツール名 → 縦動画台本（JSON形式）
-Claude claude-sonnet-4-6 または OpenAI GPT-4oで台本を自動生成する
+URL + ツール名 → 縦動画台本（英語ナレーション + 日本語訳、JSON形式）
+YouTube Shorts スタイル: 短いパンチラインを 8〜10 行で構成
 """
 import json
 import os
@@ -27,15 +27,10 @@ def get_openai_key():
     return api_key
 
 
-def get_api_key():
-    return get_openai_key()
-
-
 def fetch_page_text(url):
     try:
         resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
         text = resp.text[:8000]
-        # HTMLタグを簡易除去
         import re
         text = re.sub(r"<[^>]+>", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
@@ -47,76 +42,68 @@ def fetch_page_text(url):
 def write_script(url, tool_name, output_path):
     page_text = fetch_page_text(url)
 
-    prompt = f"""あなたはクリエイター向けAIツール紹介のショート動画の台本ライターです。
+    prompt = f"""You are a YouTube Shorts scriptwriter specializing in AI tool introductions for Japanese creators.
 
-以下のAIツールの縦動画（約38秒）の台本を作成してください。
+Create a ~38-second script for a vertical video introducing this AI tool.
 
-ツール名: {tool_name}
+Tool: {tool_name}
 URL: {url}
-サイト内容（抜粋）:
+Page content (excerpt):
 {page_text}
 
-## ★最重要: 文字数ルール★
-fullNarration は必ず **280文字以上300文字以下** で書いてください。
-少なすぎると動画が短くなりNG。文字数が足りない場合は各パートを膨らませてください。
+## SCRIPT STYLE (reference format)
+Follow this exact style — short punchy lines, energetic YouTube Shorts creator tone:
 
-## 台本の構成（5パート合計 280〜300文字）
-各パートの目安文字数（合計で必ず280〜300文字にすること）:
+Line 1 (0-4s):   Hook — lead with the result/outcome. "X just got the ability to..."
+Line 2 (4-7s):   Context — what problem exists today
+Line 3 (7-10s):  What makes this tool different
+Line 4 (10-13s): Core capability #1 (one sentence)
+Line 5 (13-18s): Core capability #2 + #3 (one sentence each)
+Line 6 (18-20s): Key differentiator ("You do not need to...")
+Line 7 (20-24s): How to get started (first step)
+Line 8 (24-30s): Key feature or use case detail
+Line 9 (30-35s): Pricing / free tier / availability
+Line 10 (35-38s): Call to action ("Follow for more AI tools")
 
-1. hook（約30文字）: 「〜が一瞬でできる！」など結果・インパクトから入る
-   例: 「デザインもコーディングも、もう別々に考えなくていい時代が来ました。」
-2. problem（約50文字）: ターゲットの課題を2〜3文で具体的に描写
-   例: 「UIデザインからコードへの変換、毎回手動でやっていませんか？デザイナーとエンジニアの連携に時間がかかり、修正のたびにコストが膨らむ。」
-3. intro（約80文字）: ツール名と何ができるか、主な機能を3〜4文で
-   例: 「{tool_name}は、AIがUIデザインをリアルタイムでコードに変換するツールです。テキストで指示するだけで、Reactコンポーネントが自動生成。デザインシステムとも連携できます。」
-4. demo（約110文字）: 実際の操作を3〜4ステップで丁寧に説明
-   例: 「使い方はシンプル。まずプロンプトで作りたいUIを入力します。すると数秒でコードが生成され、プレビューで確認できます。気に入らない部分はチャットで修正指示を出すだけ。コードはそのままコピーして使えます。」
-5. result（約30文字）: 料金・無料プランの有無・特徴を一言
-   例: 「無料プランあり。有料は月額20ドルから。」
+## RULES
+- English narration (this will be read aloud)
+- Max 15 words per line
+- No filler words ("basically", "actually", "so")
+- Start strong — hook must grab attention in first 4 seconds
+- Use second person ("you", "your") not first person
+- Each line must work as a standalone sentence
 
-## その他の制約
-- 日本語のみ
-- 敬体（です・ます）
-- CTAは含めない（エンドカードで別途表示するため）
-
-## ブラウザ操作アクション
-ナレーションの各パートに合わせて、画面で何を見せるかを actions 配列で指定してください。
-アクションタイプ:
-- navigate: 指定URLに移動
-- scroll: ページをスクロール（scrollY はピクセル）
-- highlight: 特定要素にマウスをホバー（selector は CSS セレクタ）
-
-タイミングは parts の startSec に合わせること。
-同じページを異なるスクロール位置で見せることで、ナレーションと映像を一致させてください。
-
-## 出力形式（JSON）
+## OUTPUT FORMAT (JSON only)
 {{
-  "title": "動画タイトル（20文字以内）",
-  "hook": "フックのセリフ",
-  "parts": [
-    {{"id": "hook",    "startSec": 0,  "endSec": 4,  "text": "セリフ（約30文字）"}},
-    {{"id": "problem", "startSec": 4,  "endSec": 11, "text": "セリフ（約50文字）"}},
-    {{"id": "intro",   "startSec": 11, "endSec": 20, "text": "セリフ（約80文字）"}},
-    {{"id": "demo",    "startSec": 20, "endSec": 34, "text": "セリフ（約110文字）"}},
-    {{"id": "result",  "startSec": 34, "endSec": 38, "text": "セリフ（約30文字）"}}
+  "title": "video title (max 60 chars)",
+  "lines": [
+    {{"t": 0,  "endT": 4,  "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 4,  "endT": 7,  "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 7,  "endT": 10, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 10, "endT": 13, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 13, "endT": 18, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 18, "endT": 20, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 20, "endT": 24, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 24, "endT": 30, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 30, "endT": 35, "en": "English line here", "ja": "日本語訳"}},
+    {{"t": 35, "endT": 38, "en": "English line here", "ja": "日本語訳"}}
   ],
-  "fullNarration": "全5パートを繋げた完全ナレーション文。必ず280〜300文字。",
+  "fullNarration": "Complete English narration — all lines joined with space. Used for TTS.",
   "actions": [
-    {{"t": 0,  "type": "navigate", "url": "{url}", "label": "トップページ表示"}},
-    {{"t": 4,  "type": "scroll",   "scrollY": 600, "label": "問題を示す箇所を表示"}},
-    {{"t": 11, "type": "navigate", "url": "{url}", "label": "機能紹介セクション", "scrollY": 0}},
-    {{"t": 20, "type": "scroll",   "scrollY": 1200, "label": "デモエリア表示"}},
-    {{"t": 34, "type": "navigate", "url": "{url}/pricing", "label": "料金ページ"}}
+    {{"t": 0,  "type": "navigate", "url": "{url}", "label": "Show homepage"}},
+    {{"t": 7,  "type": "scroll",   "scrollY": 500, "label": "Scroll to features"}},
+    {{"t": 13, "type": "scroll",   "scrollY": 1100, "label": "Show demo section"}},
+    {{"t": 24, "type": "navigate", "url": "{url}/pricing", "label": "Pricing page"}},
+    {{"t": 35, "type": "scroll",   "scrollY": 0, "label": "Back to top"}}
   ]
 }}
 
-JSONのみ返してください。"""
+Return JSON only."""
 
     import re
 
     def call_llm(p, temperature=0.7):
         """Claude API を優先、失敗時は OpenAI にフォールバック"""
-        # 1. Anthropic Claude SDK を試みる（ANTHROPIC_API_KEY or 内部認証）
         try:
             import anthropic as _anthropic
             client = _anthropic.Anthropic()
@@ -129,13 +116,9 @@ JSONのみ返してください。"""
         except Exception as e:
             print(f"   Claude SDK 失敗: {e}。claude CLI を試みます...")
 
-        # 2. claude CLI (Claude Code) を試みる
+        # 2. claude CLI フォールバック
         try:
             import subprocess as _sp
-            import tempfile as _tmp
-            with _tmp.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as tf:
-                tf.write(p)
-                tf_path = tf.name
             result = _sp.run(
                 ["claude", "--print", "--output-format", "text", p[:4000]],
                 capture_output=True, text=True, timeout=120,
@@ -146,7 +129,7 @@ JSONのみ返してください。"""
         except Exception as e:
             print(f"   claude CLI 失敗: {e}。OpenAI にフォールバック...")
 
-        # OpenAI フォールバック
+        # 3. OpenAI フォールバック
         oai_key = get_openai_key()
         if not oai_key:
             print("❌ API キーが見つかりません (ANTHROPIC_API_KEY / OPENAI_API_KEY)")
@@ -178,30 +161,23 @@ JSONのみ返してください。"""
 
     script = json.loads(extract_json(content))
 
-    # 文字数が短すぎる場合は一度だけ再試行
-    char_count = len(script.get("fullNarration", ""))
-    if char_count < 200:
-        print(f"⚠️  fullNarration が{char_count}文字と短すぎます。再試行...")
-        retry_content = call_llm(
-            prompt + f"\n\n※前回の生成は{char_count}文字でした。必ず280文字以上300文字以下で。",
-            temperature=0.8,
+    # fullNarration が空なら lines から自動生成
+    if not script.get("fullNarration") and script.get("lines"):
+        script["fullNarration"] = " ".join(
+            line["en"] for line in script["lines"] if line.get("en")
         )
-        if retry_content:
-            retry_script = json.loads(extract_json(retry_content))
-            retry_chars = len(retry_script.get("fullNarration", ""))
-            if retry_chars > char_count:
-                script = retry_script
-                char_count = retry_chars
-                print(f"   再試行で{char_count}文字に改善")
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(script, f, ensure_ascii=False, indent=2)
 
+    lines = script.get("lines", [])
+    total_sec = lines[-1]["endT"] if lines else 38
+    narration = script.get("fullNarration", "")
+
     print(f"✅ 台本生成完了: {script.get('title', '')}")
-    print(f"   パート: {len(script.get('parts', []))}個")
-    # 日本語TTS speed=1.5 の実測: 約9.5文字/秒
-    estimated_sec = round(char_count / 9.5)
-    print(f"   文字数: {char_count}文字（約{estimated_sec}秒 + CTA3秒 = 約{estimated_sec + 3}秒）")
+    print(f"   ライン数: {len(lines)}行")
+    print(f"   推定尺: {total_sec}秒")
+    print(f"   ナレーション: {len(narration)}文字")
 
     return script
 

@@ -27,10 +27,10 @@ def get_api_key():
     return api_key
 
 
-def generate_tts(text, output_path, voice="onyx", speed=1.4):
+def generate_tts(text, output_path, voice="onyx", speed=1.15):
     """
-    テキストをTTSで音声に変換
-    OpenAI TTS → gTTS → サイレント音声 の順でフォールバック
+    テキストをTTSで音声に変換（英語ナレーション対応）
+    OpenAI TTS → gTTS(en) → macOS say(Tom) → サイレント の順でフォールバック
     """
     print(f"   テキスト: {len(text)}文字")
 
@@ -64,15 +64,13 @@ def generate_tts(text, output_path, voice="onyx", speed=1.4):
         except Exception as e:
             print(f"⚠️ OpenAI TTS 失敗: {e} — gTTS にフォールバック")
 
-    # 2. gTTS (Google Translate TTS) を試みる
+    # 2. gTTS (Google Translate TTS) を試みる — 英語で生成
     try:
         from gtts import gTTS
         import subprocess
-        import tempfile
-        tts = gTTS(text=text, lang="ja")
+        tts = gTTS(text=text, lang="en")
         tmp_mp3 = output_path.replace(".wav", "_tmp.mp3")
         tts.save(tmp_mp3)
-        # MP3 → WAV 変換 (ffmpeg)
         result = subprocess.run(
             ["ffmpeg", "-y", "-i", tmp_mp3, "-ar", "22050", "-ac", "1", output_path],
             capture_output=True,
@@ -92,7 +90,7 @@ def generate_tts(text, output_path, voice="onyx", speed=1.4):
                 capture_output=True,
             )
             from gtts import gTTS
-            tts = gTTS(text=text, lang="ja")
+            tts = gTTS(text=text, lang="en")
             tmp_mp3 = output_path.replace(".wav", "_tmp.mp3")
             tts.save(tmp_mp3)
             result = subprocess.run(
@@ -108,14 +106,14 @@ def generate_tts(text, output_path, voice="onyx", speed=1.4):
     except Exception as e:
         print(f"⚠️ gTTS エラー: {e}")
 
-    # 3. macOS say コマンド（日本語Kyokoボイス）
+    # 3. macOS say コマンド（英語男性ボイス: Tom）
     import subprocess
     import platform
     if platform.system() == "Darwin":
         try:
             tmp_aiff = output_path.replace(".wav", "_tmp.aiff")
             result = subprocess.run(
-                ["say", "-v", "Otoya", "-r", "175", "-o", tmp_aiff, text],
+                ["say", "-v", "Tom", "-r", "185", "-o", tmp_aiff, text],
                 capture_output=True, timeout=120,
             )
             if result.returncode == 0 and os.path.exists(tmp_aiff):
@@ -130,8 +128,8 @@ def generate_tts(text, output_path, voice="onyx", speed=1.4):
         except Exception as e:
             print(f"⚠️ say コマンド失敗: {e}")
 
-    # 4. サイレント音声を生成（文字数÷9.5文字/秒で長さ推定）
-    estimated_sec = len(text) / 9.5
+    # 4. サイレント音声を生成（英語: 約14文字/秒で推定）
+    estimated_sec = len(text) / 14
     print(f"⚠️ サイレント音声を生成 ({estimated_sec:.1f}秒) — 後で実音声と差し替え可")
     subprocess.run(
         ["ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=22050:cl=mono",
@@ -152,8 +150,8 @@ if __name__ == "__main__":
 
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    voice = sys.argv[3] if len(sys.argv) > 3 else "nova"
-    speed = float(sys.argv[4]) if len(sys.argv) > 4 else 1.5
+    voice = sys.argv[3] if len(sys.argv) > 3 else "onyx"
+    speed = float(sys.argv[4]) if len(sys.argv) > 4 else 1.15
 
     # JSONファイルかテキストかを判定
     if input_path.endswith(".json"):
