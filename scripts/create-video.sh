@@ -66,10 +66,24 @@ fi
 echo ""
 echo "📸 Phase 2: スクリーンショット撮影..."
 
-# Playwright がなければインストール
+# Playwright Pythonモジュールがなければインストール
 if ! python3 -c "from playwright.sync_api import sync_playwright" 2>/dev/null; then
   echo "   Playwright インストール中..."
   python3 -m pip install playwright -q --break-system-packages 2>/dev/null || python3 -m pip install playwright -q --user
+fi
+
+# Chromiumバイナリがなければ自動インストール（初回のみ数分かかる）
+if ! python3 -c "
+import glob, os
+paths = (
+  glob.glob(os.path.expanduser('~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-arm64/chrome-headless-shell'))
+  + glob.glob(os.path.expanduser('~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-x64/chrome-headless-shell'))
+  + glob.glob(os.path.expanduser('~/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux/headless_shell'))
+  + glob.glob(os.path.expanduser('~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium'))
+)
+assert paths
+" 2>/dev/null; then
+  echo "   🌐 Chromiumバイナリをインストール中（初回のみ・数分かかります）..."
   python3 -m playwright install chromium
 fi
 
@@ -78,10 +92,9 @@ PRICING_URL="${URL%/}/pricing"
 python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
   "$URL" \
   "$PRICING_URL" \
-  "${URL%/}/features" \
-  2>/dev/null || true
+  "${URL%/}/features"
 
-SS_COUNT=$(ls "$OUTPUT_DIR/screenshots/"*.png 2>/dev/null | wc -l | tr -d ' ')
+SS_COUNT=$(ls "$OUTPUT_DIR/screenshots/"*.{png,jpg,jpeg,webp} 2>/dev/null | wc -l | tr -d ' ')
 echo "   ${SS_COUNT}枚 撮影完了"
 
 # --- Phase 2b: actions に沿ったブラウザ操作録画 ---
@@ -95,13 +108,13 @@ if python3 -c "import json,sys; d=json.load(open('$OUTPUT_DIR/script.json')); sy
     "$OUTPUT_DIR/script.json" \
     "$OUTPUT_DIR/demo-full.mp4" \
     "$OUTPUT_DIR/actions_timeline.json" \
-    2>/dev/null || echo "   ⚠️  操作録画スキップ（スクリーンショットのみで続行）"
+    || echo "   ⚠️  操作録画スキップ（スクリーンショットのみで続行）"
 else
   # フォールバック: 通常スクロール録画
   python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
     --record "$OUTPUT_DIR/demo-full.mp4" \
     "$URL" \
-    2>/dev/null || echo "   ⚠️  録画スキップ（スクリーンショットのみで続行）"
+    || echo "   ⚠️  録画スキップ（スクリーンショットのみで続行）"
 fi
 
 if [ -f "$OUTPUT_DIR/demo-full.mp4" ]; then

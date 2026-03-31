@@ -61,6 +61,7 @@ def fetch_og_images(urls, output_dir):
     """
     Playwright が使えない場合のフォールバック。
     OGP/Twitter Card 画像を requests のみでダウンロードしてスクリーンショット代替に使用。
+    同一URLの画像は重複して保存しない。
     """
     import requests
     import re
@@ -68,6 +69,7 @@ def fetch_og_images(urls, output_dir):
 
     os.makedirs(output_dir, exist_ok=True)
     saved = []
+    seen_img_urls = set()  # 重複ダウンロード防止
     print("   🌐 OG画像フォールバック（Playwright不要）...")
 
     for i, url in enumerate(urls[:5]):
@@ -104,6 +106,12 @@ def fetch_og_images(urls, output_dir):
                 p = urlparse(url)
                 og_img = f"{p.scheme}://{p.netloc}{og_img}"
 
+            # 同じ画像URLはスキップ（全ページ同一OGが多いサイト対策）
+            if og_img in seen_img_urls:
+                print(f"   ⏩ 重複スキップ: {url}")
+                continue
+            seen_img_urls.add(og_img)
+
             img_resp = requests.get(
                 og_img,
                 headers={"User-Agent": "Mozilla/5.0"},
@@ -115,7 +123,7 @@ def fetch_og_images(urls, output_dir):
             ctype = img_resp.headers.get("content-type", "")
             ext = "png" if "png" in ctype else ("webp" if "webp" in ctype else "jpg")
             domain = url.split("//")[-1].split("/")[0].replace(".", "-")[:30]
-            filename = f"{i+1:02d}-{domain}-og.{ext}"
+            filename = f"{len(saved)+1:02d}-{domain}-og.{ext}"
             filepath = os.path.join(output_dir, filename)
             with open(filepath, "wb") as f:
                 f.write(img_resp.content)
