@@ -109,7 +109,17 @@ export type Episode = {
   style: EpisodeStyle;
   /** actions_timeline.json から生成されたズームタイムライン (省略可) */
   actionsTimeline?: ActionPoint[];
+  /**
+   * AI生成クリップマップ: shot.id → "ai-clips/ファイル名"
+   * hook/problem/result/cta ショットに適用
+   */
+  aiClips?: Record<string, string>;
+  /** "auto" = hook/problem/result/ctaにAIクリップ、intro/demoはブラウザ録画 */
+  blendMode?: "auto" | "browser-only";
 };
+
+/** auto blend モードでAIクリップを使うショットID */
+const AI_BLEND_SHOT_IDS = new Set(["hook", "problem", "result", "cta"]);
 
 // ===== Ken Burns 静止画コンポーネント =====
 
@@ -309,7 +319,7 @@ export const ShortVideo: React.FC = () => {
     return <AbsoluteFill style={{ backgroundColor: "#000" }} />;
   }
 
-  const { shots, subtitles, style, files, actionsTimeline } = episode;
+  const { shots, subtitles, style, files, actionsTimeline, aiClips, blendMode } = episode;
   const transitionDurationFrames = style.transition.durationFrames ?? 8;
 
   // ショットごとのフレーム尺を計算
@@ -340,6 +350,24 @@ export const ShortVideo: React.FC = () => {
           const isLast = i === shots.length - 1;
 
           const sceneElement = (() => {
+            // AIクリップが存在し、このショットがAIブレンド対象かチェック
+            const aiClipSrc = aiClips?.[shot.id];
+            const useAiClip =
+              blendMode !== "browser-only" &&
+              !!aiClipSrc &&
+              AI_BLEND_SHOT_IDS.has(shot.id);
+
+            if (useAiClip && aiClipSrc) {
+              return (
+                <AbsoluteFill>
+                  <Video
+                    src={staticFile(`project/${aiClipSrc}`)}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </AbsoluteFill>
+              );
+            }
+
             if (shot.type === "video" && shot.src) {
               const videoStartSec = shot.videoStartSec ?? 0;
               const videoContent = (
@@ -370,7 +398,7 @@ export const ShortVideo: React.FC = () => {
                 />
               );
             }
-            // type === "color" (CTAなど)
+            // type === "color"
             const isCta = shot.id === "cta";
             return (
               <ColorScene

@@ -27,6 +27,49 @@ def get_api_key():
     return api_key
 
 
+def tts_google_ai_studio(text, output_path, voice="en-US-Journey-D"):
+    """
+    Google AI Studio / Cloud Text-to-Speech API（無料枠あり）
+    GOOGLE_AI_KEY 環境変数が必要
+    """
+    import base64
+    api_key = os.environ.get("GOOGLE_AI_KEY", "")
+    if not api_key:
+        return False
+    try:
+        resp = requests.post(
+            f"https://texttospeech.googleapis.com/v1/text:synthesize?key={api_key}",
+            json={
+                "input": {"text": text},
+                "voice": {
+                    "languageCode": "en-US",
+                    "name": voice,
+                    "ssmlGender": "MALE",
+                },
+                "audioConfig": {
+                    "audioEncoding": "LINEAR16",
+                    "speakingRate": 1.1,
+                    "pitch": -1.5,
+                    "sampleRateHertz": 22050,
+                },
+            },
+            timeout=60,
+        )
+        if resp.status_code == 200:
+            audio = base64.b64decode(resp.json()["audioContent"])
+            with open(output_path, "wb") as f:
+                f.write(audio)
+            size_kb = len(audio) // 1024
+            print(f"✅ Google TTS 完了: {output_path} ({size_kb}KB)")
+            return True
+        else:
+            print(f"⚠️ Google TTS: {resp.status_code} — {resp.text[:100]}")
+            return False
+    except Exception as e:
+        print(f"⚠️ Google TTS 失敗: {e}")
+        return False
+
+
 def generate_tts(text, output_path, voice="onyx", speed=1.15):
     """
     テキストをTTSで音声に変換（英語ナレーション対応）
@@ -64,7 +107,11 @@ def generate_tts(text, output_path, voice="onyx", speed=1.15):
         except Exception as e:
             print(f"⚠️ OpenAI TTS 失敗: {e} — gTTS にフォールバック")
 
-    # 2. gTTS (Google Translate TTS) を試みる — 英語で生成
+    # 2. Google AI Studio TTS（無料・高品質）
+    if tts_google_ai_studio(text, output_path):
+        return
+
+    # 3. gTTS (Google Translate TTS) を試みる — 英語で生成
     try:
         from gtts import gTTS
         import subprocess

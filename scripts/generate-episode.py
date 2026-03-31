@@ -206,6 +206,21 @@ def generate_episode(project_dir):
             "label": "結果 + 料金",
         })
 
+    # ai-clips ディレクトリのクリップを収集して shot ID にマッピング
+    ai_clips_dir = os.path.join(project_dir, "ai-clips")
+    ai_clips_map = {}  # shot_id → "ai-clips/ファイル名"
+    if os.path.exists(ai_clips_dir):
+        for fname in sorted(os.listdir(ai_clips_dir)):
+            if not fname.endswith((".mp4", ".webm", ".mov")):
+                continue
+            # ファイル名パターン: "01-hook.mp4" → shot_id = "hook"
+            base = os.path.splitext(fname)[0]
+            parts = base.split("-", 1)
+            shot_id = parts[1] if len(parts) == 2 else base
+            ai_clips_map[shot_id] = f"ai-clips/{fname}"
+        if ai_clips_map:
+            print(f"   🎬 AIクリップ読み込み: {len(ai_clips_map)}件 {list(ai_clips_map.keys())}")
+
     # actionsTimeline がある場合はデモ映像を 1 ショットに統合
     # (AutoZoom がズームを担うため、複数ショット分割は不要)
     if actions_timeline and has_demo:
@@ -246,6 +261,7 @@ def generate_episode(project_dir):
         "shots": shots,
         "subtitles": transcript.get("subtitles", []),
         **({"actionsTimeline": actions_timeline} if actions_timeline else {}),
+        **({"aiClips": ai_clips_map, "blendMode": "auto"} if ai_clips_map else {}),
         "style": {
             "telop": {
                 "fontFamily": "Noto Sans JP",

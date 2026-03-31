@@ -102,6 +102,18 @@ else
   echo "   ℹ️  録画なし — スクリーンショットで代替"
 fi
 
+# --- Phase 2c: AI動画クリッププロンプト生成 ---
+echo ""
+echo "🎬 Phase 2c: AI動画プロンプト生成..."
+python3 "$SKILL_DIR/scripts/generate-clips.py" "$OUTPUT_DIR"
+echo ""
+echo "📋 Auto Meta 手順:"
+echo "   1. $OUTPUT_DIR/ai-clips-prompts.txt を開く"
+echo "   2. 🎬 AI CLIP のプロンプトを Auto Meta に貼り付けて生成"
+echo "   3. 生成したクリップを $OUTPUT_DIR/ai-clips/ に保存"
+echo "   (スキップして進めた場合はブラウザ録画のみで動画を生成)"
+echo ""
+
 # --- Phase 3: TTS ナレーション生成 ---
 echo ""
 echo "🎙 Phase 3: ナレーション生成 (OpenAI TTS / macOS say)..."

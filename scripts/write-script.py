@@ -42,63 +42,88 @@ def fetch_page_text(url):
 def write_script(url, tool_name, output_path):
     page_text = fetch_page_text(url)
 
-    prompt = f"""You are a YouTube Shorts scriptwriter specializing in AI tool introductions for Japanese creators.
-
-Create a ~38-second script for a vertical video introducing this AI tool.
+    prompt = f"""You are an elite YouTube Shorts scriptwriter. Your scripts get 1M+ views.
+Study this tool deeply, then write a script that makes viewers think "I NEED this right now."
 
 Tool: {tool_name}
 URL: {url}
-Page content (excerpt):
+Page content:
 {page_text}
 
-## SCRIPT STYLE (reference format)
-Follow this exact style — short punchy lines, energetic YouTube Shorts creator tone:
+━━━ SCRIPT RULES (NON-NEGOTIABLE) ━━━
 
-Line 1 (0-4s):   Hook — lead with the result/outcome. "X just got the ability to..."
-Line 2 (4-7s):   Context — what problem exists today
-Line 3 (7-10s):  What makes this tool different
-Line 4 (10-13s): Core capability #1 (one sentence)
-Line 5 (13-18s): Core capability #2 + #3 (one sentence each)
-Line 6 (18-20s): Key differentiator ("You do not need to...")
-Line 7 (20-24s): How to get started (first step)
-Line 8 (24-30s): Key feature or use case detail
-Line 9 (30-35s): Pricing / free tier / availability
-Line 10 (35-38s): Call to action ("Follow for more AI tools")
+LINE 1-2 | HOOK (0-6s) — START WITH THE RESULT, NEVER THE TOOL NAME
+  ✅ "I just built a full app in 30 seconds — for free."
+  ✅ "This AI does something no other tool on earth can."
+  ✅ "Free AI just killed a $200/month subscription."
+  ❌ NEVER: "Today I want to show you..." / "Let me introduce..." / "Have you heard of..."
 
-## RULES
-- English narration (this will be read aloud)
-- Max 15 words per line
-- No filler words ("basically", "actually", "so")
-- Start strong — hook must grab attention in first 4 seconds
-- Use second person ("you", "your") not first person
-- Each line must work as a standalone sentence
+LINE 3-4 | PROBLEM (6-13s) — SPECIFIC PAIN POINT WITH A NUMBER
+  - State a frustration the viewer has RIGHT NOW
+  - Include a time/cost number: "...which normally takes 3 hours"
+  - Make them nod: "Sound familiar?"
 
-## OUTPUT FORMAT (JSON only)
+LINE 5 | TOOL REVEAL (13-18s) — DRAMATIC INTRO
+  - Name the tool + one sentence on what makes it different
+  - Comparison hook: "Unlike [X], this one..."
+
+LINE 6-8 | 3 USE CASES (18-40s) — ESCALATE EXCITEMENT
+  - Use Case 1: The basic one everyone needs (familiar)
+  - Use Case 2: A clever trick most don't know (surprising)
+  - Use Case 3: THE JAW-DROP moment — the reason people share this video
+  - Be SPECIFIC: "Click here, paste this, watch it..."
+  - Include exact actions, not vague descriptions
+
+LINE 9 | RESULT + URGENCY (40-50s)
+  - Concrete transformation: "3 hours → 30 seconds"
+  - Price: exact free tier or "$X/month"
+  - Urgency: "Just launched" / "Free while in beta" / "Limited time"
+
+LINE 10 | CTA (50-60s)
+  - "Follow for daily AI tools that actually save you time."
+  - Tie back to the specific value they just saw
+
+━━━ JAPANESE SUBTITLE RULES ━━━
+  - 話し言葉（書き言葉禁止）
+  - 「〜ですよね」「〜じゃないですか」で共感を作る
+  - 技術用語はカタカナのまま（Whisper → Whisper）
+  - 1行15文字以内
+  - 直訳禁止。意味を汲んで日本語として自然に再構成
+
+━━━ OUTPUT FORMAT (JSON ONLY) ━━━
 {{
-  "title": "video title (max 60 chars)",
+  "title": "Catchy video title (max 60 chars)",
   "lines": [
-    {{"t": 0,  "endT": 4,  "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 4,  "endT": 7,  "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 7,  "endT": 10, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 10, "endT": 13, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 13, "endT": 18, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 18, "endT": 20, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 20, "endT": 24, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 24, "endT": 30, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 30, "endT": 35, "en": "English line here", "ja": "日本語訳"}},
-    {{"t": 35, "endT": 38, "en": "English line here", "ja": "日本語訳"}}
+    {{"t": 0,  "endT": 4,  "en": "Hook line 1 — result first", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 4,  "endT": 8,  "en": "Hook line 2 — amplify", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 8,  "endT": 13, "en": "Problem with a number", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 13, "endT": 18, "en": "Secondary problem", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 18, "endT": 23, "en": "Tool reveal — dramatic", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 23, "endT": 30, "en": "Use case 1 — basic", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 30, "endT": 38, "en": "Use case 2 — clever trick", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 38, "endT": 48, "en": "Use case 3 — jaw-drop", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 48, "endT": 54, "en": "Result + price + urgency", "ja": "日本語字幕", "visualNote": "What viewer should see"}},
+    {{"t": 54, "endT": 58, "en": "CTA tied to value", "ja": "日本語字幕", "visualNote": "What viewer should see"}}
   ],
-  "fullNarration": "Complete English narration — all lines joined with space. Used for TTS.",
+  "fullNarration": "All 10 English lines joined. Used for TTS.",
   "actions": [
-    {{"t": 0,  "type": "navigate", "url": "{url}", "label": "Show homepage"}},
-    {{"t": 7,  "type": "scroll",   "scrollY": 500, "label": "Scroll to features"}},
-    {{"t": 13, "type": "scroll",   "scrollY": 1100, "label": "Show demo section"}},
-    {{"t": 24, "type": "navigate", "url": "{url}/pricing", "label": "Pricing page"}},
-    {{"t": 35, "type": "scroll",   "scrollY": 0, "label": "Back to top"}}
-  ]
+    {{"t": 0,  "type": "navigate", "url": "{url}", "label": "Homepage — show the tool"}},
+    {{"t": 8,  "type": "scroll",   "scrollY": 600,  "label": "Scroll to problem/pain area"}},
+    {{"t": 18, "type": "scroll",   "scrollY": 0,    "label": "Back to top for reveal"}},
+    {{"t": 23, "type": "scroll",   "scrollY": 900,  "label": "Features section — use case 1"}},
+    {{"t": 30, "type": "scroll",   "scrollY": 1500, "label": "Demo section — use case 2"}},
+    {{"t": 38, "type": "scroll",   "scrollY": 2200, "label": "Jaw-drop feature — use case 3"}},
+    {{"t": 48, "type": "navigate", "url": "{url}/pricing", "label": "Pricing page"}},
+    {{"t": 54, "type": "scroll",   "scrollY": 0,    "label": "Back to top for CTA"}}
+  ],
+  "metadata": {{
+    "hookType": "result-first | shocking-stat | impossible-claim | free-vs-paid",
+    "jawDropMoment": "Line 8 description — most shareable moment",
+    "targetEmotion": "amazement | FOMO | curiosity | urgency"
+  }}
 }}
 
-Return JSON only."""
+Return JSON only. No markdown fences."""
 
     import re
 
