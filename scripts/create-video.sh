@@ -50,8 +50,17 @@ python3 -c "import requests" 2>/dev/null || python3 -m pip install requests -q -
 python3 -c "import openai" 2>/dev/null || python3 -m pip install openai -q --break-system-packages 2>/dev/null || python3 -m pip install openai -q --user
 
 # --- Phase 1: 台本生成 ---
-echo "📝 Phase 1: 台本生成 (GPT-4o)..."
-python3 "$SKILL_DIR/scripts/write-script.py" "$URL" "$TOOL_NAME" "$OUTPUT_DIR/script.json"
+# pregenerated/ に今日付きの台本があればコピーして使う
+PREGENERATED="$SKILL_DIR/pregenerated/$DATE-script.json"
+if [ -f "$OUTPUT_DIR/script.json" ]; then
+  echo "⏩ Phase 1: 台本スキップ（既存の script.json を使用）"
+elif [ -f "$PREGENERATED" ]; then
+  echo "⏩ Phase 1: 台本スキップ（pregenerated から使用: $PREGENERATED）"
+  cp "$PREGENERATED" "$OUTPUT_DIR/script.json"
+else
+  echo "📝 Phase 1: 台本生成 (Claude / GPT-4o)..."
+  python3 "$SKILL_DIR/scripts/write-script.py" "$URL" "$TOOL_NAME" "$OUTPUT_DIR/script.json"
+fi
 
 # --- Phase 2: スクリーンショット ---
 echo ""

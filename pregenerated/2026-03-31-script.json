@@ -1,0 +1,91 @@
+{
+  "title": "I cloned my voice and made a hit song — for $10/month",
+  "lines": [
+    {
+      "t": 0,
+      "endT": 4,
+      "en": "I cloned my own voice and made a full song in 60 seconds.",
+      "ja": "自分の声でフル曲を60秒で作った",
+      "visualNote": "Close-up of a finished song waveform playing in Suno"
+    },
+    {
+      "t": 4,
+      "endT": 8,
+      "en": "Not a demo. A real track — with my actual voice.",
+      "ja": "デモじゃない、本物の歌声で",
+      "visualNote": "Suno player showing a completed song with vocals"
+    },
+    {
+      "t": 8,
+      "endT": 13,
+      "en": "Professional voice recording normally costs $500 and 3 days.",
+      "ja": "プロの録音は普通50万円と3日かかる",
+      "visualNote": "Recording studio price list or invoice mockup"
+    },
+    {
+      "t": 13,
+      "endT": 18,
+      "en": "And even then you can't iterate in real-time. Sound familiar?",
+      "ja": "それでもリアルタイムで修正できない",
+      "visualNote": "Frustrated musician staring at a screen"
+    },
+    {
+      "t": 18,
+      "endT": 23,
+      "en": "Suno v5.5 just launched with Voices — unlike any AI music tool before it.",
+      "ja": "Suno v5.5が「Voices」機能を公開",
+      "visualNote": "Suno homepage with v5.5 banner"
+    },
+    {
+      "t": 23,
+      "endT": 30,
+      "en": "First, just type a style and lyrics — it generates a full song in seconds.",
+      "ja": "まずスタイルと歌詞を入力するだけ",
+      "visualNote": "Suno create page, typing prompt and clicking generate"
+    },
+    {
+      "t": 30,
+      "endT": 38,
+      "en": "Then hum or sing a melody into your mic — it turns your hum into a produced track.",
+      "ja": "次はマイクにハミングするだけでOK",
+      "visualNote": "Suno voice input interface recording a hum"
+    },
+    {
+      "t": 38,
+      "endT": 48,
+      "en": "The jaw-drop: train a Custom Model on 6 of YOUR songs — every new track sounds like YOU.",
+      "ja": "6曲学習させれば全部あなたの声になる",
+      "visualNote": "Suno Custom Model training screen uploading 6 tracks"
+    },
+    {
+      "t": 48,
+      "endT": 54,
+      "en": "Pro plan is $10 a month. Free users get the My Taste feature right now.",
+      "ja": "Proプラン月10ドル、無料でも使える機能あり",
+      "visualNote": "Suno pricing page showing Pro at $10/month"
+    },
+    {
+      "t": 54,
+      "endT": 58,
+      "en": "Follow for the AI tools that actually change your creative output.",
+      "ja": "フォローして最新AIツールをチェック",
+      "visualNote": "B-STUDIO logo + follow button animation"
+    }
+  ],
+  "fullNarration": "I cloned my own voice and made a full song in 60 seconds. Not a demo. A real track — with my actual voice. Professional voice recording normally costs $500 and 3 days. And even then you can't iterate in real-time. Sound familiar? Suno v5.5 just launched with Voices — unlike any AI music tool before it. First, just type a style and lyrics — it generates a full song in seconds. Then hum or sing a melody into your mic — it turns your hum into a produced track. The jaw-drop: train a Custom Model on 6 of YOUR songs — every new track sounds like YOU. Pro plan is $10 a month. Free users get the My Taste feature right now. Follow for the AI tools that actually change your creative output.",
+  "actions": [
+    {"t": 0,  "type": "navigate", "url": "https://suno.com", "label": "Suno homepage"},
+    {"t": 8,  "type": "scroll",   "scrollY": 600,  "label": "Scroll to pain/problem area"},
+    {"t": 18, "type": "scroll",   "scrollY": 0,    "label": "Back to top for reveal"},
+    {"t": 23, "type": "scroll",   "scrollY": 800,  "label": "Create section — basic use case"},
+    {"t": 30, "type": "scroll",   "scrollY": 1400, "label": "Voice input section — hum feature"},
+    {"t": 38, "type": "scroll",   "scrollY": 2000, "label": "Custom Models — jaw-drop feature"},
+    {"t": 48, "type": "navigate", "url": "https://suno.com/pricing", "label": "Pricing page"},
+    {"t": 54, "type": "scroll",   "scrollY": 0,    "label": "Back to top for CTA"}
+  ],
+  "metadata": {
+    "hookType": "impossible-claim",
+    "jawDropMoment": "Train a Custom Model on 6 of your own songs — all new tracks sound like you",
+    "targetEmotion": "amazement"
+  }
+}
