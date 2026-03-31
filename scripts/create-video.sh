@@ -72,20 +72,10 @@ if ! python3 -c "from playwright.sync_api import sync_playwright" 2>/dev/null; t
   python3 -m pip install playwright -q --break-system-packages 2>/dev/null || python3 -m pip install playwright -q --user
 fi
 
-# Chromiumバイナリがなければ自動インストール（初回のみ数分かかる）
-if ! python3 -c "
-import glob, os
-paths = (
-  glob.glob(os.path.expanduser('~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-arm64/chrome-headless-shell'))
-  + glob.glob(os.path.expanduser('~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-x64/chrome-headless-shell'))
-  + glob.glob(os.path.expanduser('~/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux/headless_shell'))
-  + glob.glob(os.path.expanduser('~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium'))
-)
-assert paths
-" 2>/dev/null; then
-  echo "   🌐 Chromiumバイナリをインストール中（初回のみ・数分かかります）..."
-  python3 -m playwright install chromium
-fi
+# Chromiumを常に最新バージョンで確認・インストール（Playwright自身がバージョン管理）
+# 複雑な検出ロジックは使わない — 既に正しいバージョンがあれば瞬時にスキップされる
+echo "   Chromium確認中..."
+python3 -m playwright install chromium 2>&1 | grep -E "(Downloading|Playwright|Browser|chromium)" | head -3 || true
 
 # メインページと料金ページ
 PRICING_URL="${URL%/}/pricing"
@@ -94,7 +84,7 @@ python3 "$SKILL_DIR/scripts/screenshot.py" "$OUTPUT_DIR/screenshots" \
   "$PRICING_URL" \
   "${URL%/}/features"
 
-SS_COUNT=$(ls "$OUTPUT_DIR/screenshots/"*.{png,jpg,jpeg,webp} 2>/dev/null | wc -l | tr -d ' ')
+SS_COUNT=$(find "$OUTPUT_DIR/screenshots/" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" \) 2>/dev/null | wc -l | tr -d ' ')
 echo "   ${SS_COUNT}枚 撮影完了"
 
 # --- Phase 2b: actions に沿ったブラウザ操作録画 ---

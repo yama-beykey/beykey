@@ -169,8 +169,9 @@ const ColorScene: React.FC<{
   backgroundColor: string;
   ctaText?: string;
   ctaFontSize?: number;
+  toolName?: string;
   durationInFrames: number;
-}> = ({ backgroundColor, ctaText, ctaFontSize = 42, durationInFrames }) => {
+}> = ({ backgroundColor, ctaText, ctaFontSize = 42, toolName, durationInFrames }) => {
   const frame = useCurrentFrame();
 
   const opacity = interpolate(frame, [0, 15, durationInFrames - 15, durationInFrames], [0, 1, 1, 0], {
@@ -194,22 +195,49 @@ const ColorScene: React.FC<{
     extrapolateRight: "clamp",
   });
 
+  // 背景ツール名のゆっくりズームアウト
+  const bgTextScale = interpolate(frame, [0, durationInFrames], [1.08, 1.0], {
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill
       style={{
         backgroundColor,
         justifyContent: "center",
         alignItems: "center",
+        overflow: "hidden",
       }}
     >
-      {/* ゆっくり動くアクセントグラデーション（黒画面対策） */}
+      {/* ツール名を超大きく背景表示（スクリーンショットなし時のビジュアル代替） */}
+      {toolName && !ctaText && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: `translate(-50%, -50%) scale(${bgTextScale})`,
+            fontFamily,
+            fontSize: 170,
+            fontWeight: 900,
+            color: "rgba(255,255,255,0.07)",
+            whiteSpace: "nowrap",
+            letterSpacing: "-0.04em",
+            userSelect: "none",
+            pointerEvents: "none",
+          }}
+        >
+          {toolName}
+        </div>
+      )}
+
+      {/* ゆっくり動くアクセントグラデーション */}
       <AbsoluteFill
         style={{
           background: `radial-gradient(ellipse at ${gradX}% ${gradY}%, rgba(74,172,255,${gradOpacity}) 0%, transparent 60%)`,
           pointerEvents: "none",
         }}
       />
-      {/* 右下にも小さいアクセント */}
       <AbsoluteFill
         style={{
           background: `radial-gradient(ellipse at ${100 - gradX}% ${100 - gradY}%, rgba(138,43,226,${gradOpacity * 0.5}) 0%, transparent 50%)`,
@@ -431,6 +459,7 @@ export const ShortVideo: React.FC = () => {
                 backgroundColor={shot.backgroundColor ?? "#1a1a2e"}
                 ctaText={isCta ? style.cta.text : undefined}
                 ctaFontSize={style.cta.fontSize}
+                toolName={isCta ? undefined : episode.meta.title}
                 durationInFrames={durationInFrames}
               />
             );
