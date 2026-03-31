@@ -16,12 +16,27 @@ import glob as _glob
 def _get_launch_kwargs():
     """Playwright 起動オプション（headless_shell 自動検出）"""
     _exec = None
+    # Linux
     for _cand in _glob.glob(os.path.expanduser(
         "~/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux/headless_shell"
     )):
         _exec = _cand
         break
-    # macOS: Playwright インストール済み Chromium を自動検出
+    # macOS arm64 (新しい headless_shell)
+    if not _exec:
+        for _cand in _glob.glob(os.path.expanduser(
+            "~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-arm64/chrome-headless-shell"
+        )):
+            _exec = _cand
+            break
+    # macOS x64
+    if not _exec:
+        for _cand in _glob.glob(os.path.expanduser(
+            "~/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-mac-x64/chrome-headless-shell"
+        )):
+            _exec = _cand
+            break
+    # macOS 旧パス (フルChromium)
     if not _exec:
         for _cand in _glob.glob(os.path.expanduser(
             "~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium"
@@ -42,18 +57,97 @@ def _get_launch_kwargs():
     return kwargs
 
 
+def fetch_og_images(urls, output_dir):
+    """
+    Playwright が使えない場合のフォールバック。
+    OGP/Twitter Card 画像を requests のみでダウンロードしてスクリーンショット代替に使用。
+    """
+    import requests
+    import re
+    from urllib.parse import urlparse
+
+    os.makedirs(output_dir, exist_ok=True)
+    saved = []
+    print("   🌐 OG画像フォールバック（Playwright不要）...")
+
+    for i, url in enumerate(urls[:5]):
+        try:
+            resp = requests.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                timeout=15,
+                allow_redirects=True,
+            )
+            html = resp.text
+
+            og_img = None
+            for pattern in [
+                r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+                r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']',
+                r'<meta[^>]+property=["\']og:image:secure_url["\'][^>]+content=["\']([^"\']+)["\']',
+            ]:
+                m = re.search(pattern, html, re.IGNORECASE)
+                if m:
+                    og_img = m.group(1)
+                    break
+
+            if not og_img:
+                print(f"   ⚠️  OG画像なし: {url}")
+                continue
+
+            # 相対URLを絶対URLに変換
+            if og_img.startswith("//"):
+                og_img = "https:" + og_img
+            elif og_img.startswith("/"):
+                p = urlparse(url)
+                og_img = f"{p.scheme}://{p.netloc}{og_img}"
+
+            img_resp = requests.get(
+                og_img,
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=15,
+            )
+            if img_resp.status_code != 200:
+                continue
+
+            ctype = img_resp.headers.get("content-type", "")
+            ext = "png" if "png" in ctype else ("webp" if "webp" in ctype else "jpg")
+            domain = url.split("//")[-1].split("/")[0].replace(".", "-")[:30]
+            filename = f"{i+1:02d}-{domain}-og.{ext}"
+            filepath = os.path.join(output_dir, filename)
+            with open(filepath, "wb") as f:
+                f.write(img_resp.content)
+            saved.append(filepath)
+            print(f"   ✅ OG画像保存: {filename} ({len(img_resp.content)//1024}KB)")
+        except Exception as e:
+            print(f"   ⚠️  OG画像失敗 ({url}): {e}")
+
+    if not saved:
+        print("   ℹ️  OG画像も取得できませんでした")
+    return saved
+
+
 async def take_screenshots(urls, output_dir, width=1080, height=1920):
     try:
         from playwright.async_api import async_playwright
     except ImportError:
-        print("❌ Playwright がインストールされていません: pip install playwright && playwright install chromium")
-        sys.exit(1)
+        print("   ⚠️ Playwright未インストール — OG画像でフォールバック")
+        return fetch_og_images(urls, output_dir)
 
     os.makedirs(output_dir, exist_ok=True)
     saved = []
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(**_get_launch_kwargs())
+    try:
+      async with async_playwright() as p:
+        try:
+            browser = await p.chromium.launch(**_get_launch_kwargs())
+        except Exception as e:
+            print(f"   ⚠️ Chromiumブラウザ起動失敗: {e}")
+            print("   → playwright install chromium で解決できます")
+            print("   → 今回はOG画像でフォールバックします")
+            return fetch_og_images(urls, output_dir)
         context = await browser.new_context(
             viewport={"width": width, "height": height},
             device_scale_factor=1,
@@ -94,6 +188,11 @@ async def take_screenshots(urls, output_dir, width=1080, height=1920):
 
         await context.close()
         await browser.close()
+
+    except Exception as e:
+        print(f"   ⚠️ Playwright全体エラー: {e} — OG画像でフォールバック")
+        if not saved:
+            return fetch_og_images(urls, output_dir)
 
     return saved
 

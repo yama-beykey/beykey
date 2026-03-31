@@ -265,7 +265,7 @@ def generate_episode(project_dir):
         "style": {
             "telop": {
                 "fontFamily": "Noto Sans JP",
-                "fontSize": 72,
+                "fontSize": 52,
                 "fontWeight": "900",
                 "color": "#FFFFFF",
                 "backgroundColor": "transparent",
@@ -273,7 +273,7 @@ def generate_episode(project_dir):
                 "paddingH": 0,
                 "paddingV": 0,
                 "position": "bottom",
-                "marginBottom": 160,  # 下帯なし、プラットフォームUI回避
+                "marginBottom": 200,  # 下帯なし、プラットフォームUI回避
                 "accentColor": "#4AACFF",
             },
             "title": {

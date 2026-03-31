@@ -182,6 +182,18 @@ const ColorScene: React.FC<{
     extrapolateRight: "clamp",
   });
 
+  // アニメーションするグラジエントのアクセント位置
+  const gradX = interpolate(frame, [0, durationInFrames], [35, 65], {
+    extrapolateRight: "clamp",
+  });
+  const gradY = interpolate(frame, [0, durationInFrames], [25, 55], {
+    extrapolateRight: "clamp",
+  });
+  const gradOpacity = interpolate(frame, [0, 20, durationInFrames - 10, durationInFrames], [0, 0.35, 0.35, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill
       style={{
@@ -190,6 +202,20 @@ const ColorScene: React.FC<{
         alignItems: "center",
       }}
     >
+      {/* ゆっくり動くアクセントグラデーション（黒画面対策） */}
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(ellipse at ${gradX}% ${gradY}%, rgba(74,172,255,${gradOpacity}) 0%, transparent 60%)`,
+          pointerEvents: "none",
+        }}
+      />
+      {/* 右下にも小さいアクセント */}
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(ellipse at ${100 - gradX}% ${100 - gradY}%, rgba(138,43,226,${gradOpacity * 0.5}) 0%, transparent 50%)`,
+          pointerEvents: "none",
+        }}
+      />
       {ctaText && (
         <div
           style={{

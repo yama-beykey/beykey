@@ -135,28 +135,34 @@ def _refine_with_whisper(subtitles, lines, result):
     """
     Whisper の word タイムスタンプを使って字幕の startSec / endSec を精密化する。
     lines の en テキストとの照合で各ラインの開始・終了フレームを特定。
+    検索位置を前のラインの終端から進めることで重複マッチを防ぐ。
     """
     words = result.get("words", [])
     if not words or not lines:
         return subtitles
 
-    # words を全文として結合し、各ラインの英語テキストが何番目の単語か探す
-    all_words_lower = [w["word"].strip().lower().strip(".,!?") for w in words]
+    all_words_lower = [w["word"].strip().lower().strip(".,!?'\"") for w in words]
+    search_start = 0  # 各ラインの検索開始位置を追跡（前のラインより前は見ない）
 
     for i, line in enumerate(lines):
-        en_words = [w.lower().strip(".,!?") for w in line.get("en", "").split() if w]
+        en_words = [w.lower().strip(".,!?'\"") for w in line.get("en", "").split() if w]
         if not en_words:
             continue
 
-        # 最初の単語でスタート位置を探す
-        for start_idx in range(len(all_words_lower)):
+        # search_start から前進しながら最初の単語を探す
+        for start_idx in range(search_start, len(all_words_lower)):
             if all_words_lower[start_idx] == en_words[0]:
-                # ラインの単語列がここから始まるか確認
                 end_idx = start_idx + len(en_words) - 1
                 if end_idx < len(words):
                     subtitles[i]["startSec"] = round(words[start_idx]["start"], 2)
                     subtitles[i]["endSec"] = round(words[end_idx]["end"], 2)
+                    search_start = end_idx + 1  # 次のラインはここより後から探す
                     break
+
+    # 重複を排除: 前のラインが次のラインの開始時刻を超えていたら切り詰める
+    for i in range(len(subtitles) - 1):
+        if subtitles[i]["endSec"] > subtitles[i + 1]["startSec"]:
+            subtitles[i]["endSec"] = round(subtitles[i + 1]["startSec"] - 0.05, 2)
 
     return subtitles
 
