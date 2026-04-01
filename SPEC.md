@@ -362,60 +362,56 @@ python3 scripts/generate-episode.py <日付ディレクトリ>
 
 ---
 
-## 使い方
+## 基本的な使い方
 
-### 基本フロー（手動素材 + 自動生成）
+### メインコマンド: `make.sh`
 
 ```
-1. 録画・スクリーンショットを手動で用意
-   ~/Videos/daily-shorts/2026-03-31/demo-full.mp4      ← 画面録画
-   ~/Videos/daily-shorts/2026-03-31/screenshots/01.png ← スクリーンショット
-
-2. パイプライン実行（素材があればPhase2・2bは自動スキップ）
-   bash scripts/create-video.sh https://suno.com "Suno v5.5" 2026-03-31
-
-3. 必要ならAIクリップを追加して再レンダリング
-   bash scripts/render.sh ~/Videos/daily-shorts/2026-03-31
+原稿と素材を用意して1コマンド実行するだけ。
 ```
-
-### その他のコマンド
 
 ```bash
-# トレンドAIツールを自動発掘して生成
-bash scripts/daily.sh
+# 1. ディレクトリを作って素材を置く
+mkdir -p ~/Videos/daily-shorts/2026-03-31/screenshots
 
-# 自動選択モード
-bash scripts/daily.sh --auto
+cp 自分の録画.mp4        ~/Videos/daily-shorts/2026-03-31/demo-full.mp4
+cp スクショ1.png         ~/Videos/daily-shorts/2026-03-31/screenshots/01.png
+cp script.json           ~/Videos/daily-shorts/2026-03-31/script.json
 
-# 再レンダリングのみ（素材・台本・音声が揃っている状態）
+# 2. 実行（TTS生成→字幕→レンダリング）
+bash scripts/make.sh ~/Videos/daily-shorts/2026-03-31
+```
+
+### 素材の配置
+
+| ファイル | 必須 | 説明 |
+|---|---|---|
+| `script.json` | ✅ 必須 | 原稿（10行の台本） |
+| `demo-full.mp4` | オプション | 画面録画 |
+| `screenshots/*.png` | オプション | 静止画（複数可、名前順） |
+| `ai-clips/01-hook.mp4` | オプション | AIクリップ（Auto Meta等） |
+| `narration.wav` | 自動生成 | なければTTSで自動生成 |
+
+### AIクリップを追加して再レンダリング
+
+```bash
+# ai-clips-prompts.txt のプロンプトをAuto Metaで生成
+# → ai-clips/ に保存後:
 bash scripts/render.sh ~/Videos/daily-shorts/2026-03-31
 ```
 
 ---
 
-## 手動素材の配置ルール
+## その他のコマンド（全自動モード）
 
-| ファイル | 場所 | 説明 |
-|---|---|---|
-| `demo-full.mp4` | `YYYY-MM-DD/` | 画面録画（縦1080×1920推奨、横でも可） |
-| `screenshots/*.png` | `YYYY-MM-DD/screenshots/` | 静止画（複数可、名前順で使用） |
-| `ai-clips/01-hook.mp4` | `YYYY-MM-DD/ai-clips/` | AIクリップ（Auto Meta等で生成） |
-| `script.json` | `YYYY-MM-DD/` | 事前生成済みならPhase1スキップ |
+```bash
+# トレンド発掘から全自動生成（台本・スクショもAIが担当）
+bash scripts/daily.sh
 
-**素材が存在する場合の動作:**
-- `screenshots/` に画像あり → Phase2（自動スクリーンショット）スキップ
-- `demo-full.mp4` あり → Phase2b（Playwright録画）スキップ
-- `script.json` あり → Phase1（台本生成）スキップ
+bash scripts/daily.sh --auto
 
----
-
-## 既知の制限
-
-| 項目 | 内容 |
-|---|---|
-| Playwright | 自動録画のオプション機能。手動素材があれば不要 |
-| AIクリップ | Auto Meta等で手動生成してai-clips/に配置 |
-| 録画品質 | 手動録画の方がPlaywright自動録画より高品質 |
+bash scripts/create-video.sh https://suno.com "Suno v5.5" 2026-03-31
+```
 
 ---
 
