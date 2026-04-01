@@ -364,30 +364,58 @@ python3 scripts/generate-episode.py <日付ディレクトリ>
 
 ## 使い方
 
+### 基本フロー（手動素材 + 自動生成）
+
+```
+1. 録画・スクリーンショットを手動で用意
+   ~/Videos/daily-shorts/2026-03-31/demo-full.mp4      ← 画面録画
+   ~/Videos/daily-shorts/2026-03-31/screenshots/01.png ← スクリーンショット
+
+2. パイプライン実行（素材があればPhase2・2bは自動スキップ）
+   bash scripts/create-video.sh https://suno.com "Suno v5.5" 2026-03-31
+
+3. 必要ならAIクリップを追加して再レンダリング
+   bash scripts/render.sh ~/Videos/daily-shorts/2026-03-31
+```
+
+### その他のコマンド
+
 ```bash
 # トレンドAIツールを自動発掘して生成
 bash scripts/daily.sh
 
-# 自動選択モード（#1を自動ピック）
+# 自動選択モード
 bash scripts/daily.sh --auto
 
-# URL直指定
-bash scripts/create-video.sh https://suno.com "Suno v5.5" 2026-03-31
-
-# 素材が揃っている場合のみ再レンダリング
+# 再レンダリングのみ（素材・台本・音声が揃っている状態）
 bash scripts/render.sh ~/Videos/daily-shorts/2026-03-31
 ```
 
 ---
 
-## 既知の制限と対処
+## 手動素材の配置ルール
 
-| 問題 | 原因 | 対処 |
+| ファイル | 場所 | 説明 |
 |---|---|---|
-| Playwright chromiumが動かない | バイナリ未インストール | `create-video.sh`が毎回`playwright install chromium`を実行 |
-| Playwright失敗時はOG画像のみ | ブラウザ録画なし | 同一URLのOG画像は重複保存しない |
-| 録画に59秒かかる | 実際のブラウザ操作を録画 | 仕様（actions配列のt値＋5秒） |
-| AIクリップは手動 | Auto Metaへの自動連携なし | `ai-clips-prompts.txt`のプロンプトを手動でAuto Metaに貼り付け→`ai-clips/`に保存→再レンダリング |
+| `demo-full.mp4` | `YYYY-MM-DD/` | 画面録画（縦1080×1920推奨、横でも可） |
+| `screenshots/*.png` | `YYYY-MM-DD/screenshots/` | 静止画（複数可、名前順で使用） |
+| `ai-clips/01-hook.mp4` | `YYYY-MM-DD/ai-clips/` | AIクリップ（Auto Meta等で生成） |
+| `script.json` | `YYYY-MM-DD/` | 事前生成済みならPhase1スキップ |
+
+**素材が存在する場合の動作:**
+- `screenshots/` に画像あり → Phase2（自動スクリーンショット）スキップ
+- `demo-full.mp4` あり → Phase2b（Playwright録画）スキップ
+- `script.json` あり → Phase1（台本生成）スキップ
+
+---
+
+## 既知の制限
+
+| 項目 | 内容 |
+|---|---|
+| Playwright | 自動録画のオプション機能。手動素材があれば不要 |
+| AIクリップ | Auto Meta等で手動生成してai-clips/に配置 |
+| 録画品質 | 手動録画の方がPlaywright自動録画より高品質 |
 
 ---
 
